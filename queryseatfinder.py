@@ -3,10 +3,7 @@ import json
 import csv
 import datetime
 
-import xlwt
-from xlwt import Workbook
-
-
+from openpyxl import Workbook
 
 import pandas as pd
 
@@ -23,7 +20,7 @@ class Model(object):
 
 	def __init__(self, url_seatfinder, dstpath):
 		self.url_sf = url_seatfinder
-		self.dstpath = dstpath;
+		self.dstpath = dstpath
 		self.workbook = Workbook()
 		# Reading halls LS
 		self.mainlib = {'LSG', 		# Gesellschaftswissenschaften
@@ -56,10 +53,10 @@ class Model(object):
 		data = r.json()
 		with open('libdata.json', 'w+') as ld:
 			ld.write(r.text)
-		sheet1 = self.workbook.add_sheet('Libraries', cell_overwrite_ok = True)
-		cindex = 0
+		sheet1 = self.workbook.create_sheet('Libraries')
+		cindex = 1
 		for location in data:
-			self.__parseJSONrecursively(location, sheet1, 0, cindex, 0, ['timestamp', 'opening_hours'], [self.__parseTimeStamps, self.__parseOpeningHours])
+			self.__parseJSONrecursively(location, sheet1, 1, cindex, 0, {'timestamp' : self.__parseTimeStamps, 'opening_hours' : self.__parseOpeningHours})
 			cindex += 2
 		self.workbook.save(self.dstpath)
 
@@ -88,11 +85,8 @@ class Model(object):
 		if (not isinstance(data, dict)):
 			return data
 		keylist = list(data.keys());
-		print('invoked')
-		print(keylist)
 		if (keylist[0] == 'date'):
 			return datetime.datetime.strptime(data['date'], "%Y-%m-%d %H:%M:%S.%f")
-
 
 	def obtainDataFromServer(self, parameters):
 		r = requests.get(url = self.url_sf, params = parameters)
@@ -102,24 +96,28 @@ class Model(object):
 			csv_data = csv.writer(csv_file)
 			#self.__parseJSONrecursively(data, csv_data)
 
-	def __parseJSONrecursively(self, json_data, sheet, row, column, level, keybreak, callback):
+	def __parseJSONrecursively(self, json_data, sheet, row, column, level, callback):
 		if (isinstance(json_data, list)):
 			for element in json_data:
-				self.__parseJSONrecursively(element, sheet, row, column, level + 1, keybreak, callback)
+				self.__parseJSONrecursively(element, sheet, row, column, level + 1, callback)
 		elif (isinstance(json_data, dict)):
 			addoff = 0
 			for key in json_data.keys():
 				addoff = addoff + 1
-				sheet.write(row + addoff, column, key)
-				if (key in keybreak):
-					fcn = callback[keybreak.index(key)]
-					value = fcn(json_data[key])
-					sheet.write(row + addoff, column + 1, str(value))
+				sheet.cell(row + addoff, column).value = key
+				if (keybreak in callback.keys()):
+					fcn = callback[keybreak]
+					value = fcn(json_data[keybreak])
+					sheet.cell(row + addoff, column + 1).value = str(value)
 				else:
-					self.__parseJSONrecursively(json_data[key], sheet, row + addoff, column, level + 1, keybreak, callback)
+					self.__parseJSONrecursively(json_data[key], sheet, row + addoff, column, level + 1, callback)
 		else:
-			attrlist = sheet.cell(row, column + 1).value
-			sheet.write(row, column + 1, attrlist + ', ' + str(json_data))
+			value = sheet.cell(row, column + 1).value
+			if (not value):
+				sheet.cell(row, column + 1).value = json_data
+			elif (isinstance(value, str)):
+				sheet.cell(row, column + 1).value = value + ", " + str(json_data)
+
 
 class ViewController(object):
 	def __init__(self, pModel):
@@ -129,6 +127,6 @@ class ViewController(object):
 		PARAMS = {'location[]' : self.model.mainlib, 'values' : 'location', 'before' : 'now', 'limit' : 20}
 		return PARAMS
 
-m = Model(URL, 'data.xls')
+m = Model(URL, 'data.xlsx')
 c = ViewController(m)
 m.getLibSpecTable()
