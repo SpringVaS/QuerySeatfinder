@@ -16,6 +16,9 @@ limit = 10
 
 PARAMS = {'location[]' : location, 'values' : values, 'before' : before, 'limit' : limit}
 
+def identityFunction(data):
+	return data
+
 class Model(object):
 
 	def __init__(self, url_seatfinder, dstpath):
@@ -41,6 +44,8 @@ class Model(object):
 
 		self.vtypes = {'location[]', 'sublocs'}
 
+		self.timeSeriesKeys = {'seatestimate' : 'occupied_seats'}
+
 	def __del__(self):
 		pass
 
@@ -49,16 +54,57 @@ class Model(object):
 		print((mon + 1).strftime("%A"))
 
 	def getLibSpecTable(self):
-		r = requests.get(url = self.url_sf, params = {'location[]' : self.mainlib, 'sublocs' : 1, 'values' : 'location', 'before' : 'now'})
+		queryparams =	{'location[]'	: [self.mainlib, self.slibs], 
+						 'sublocs'		: 1,
+						 'values'		: 'location',
+						 'before'		: 'now'}
+		r = requests.get(url = self.url_sf, params = queryparams)
 		data = r.json()
+		# write back the json from server to local hard drive for debugging purposes
 		with open('libdata.json', 'w+') as ld:
 			ld.write(r.text)
 		sheet1 = self.workbook.create_sheet('Libraries')
+		callbacks = {'timestamp' : self.__parseTimeStamps, 'opening_hours' : self.__parseOpeningHours}
 		cindex = 1
+		self.__parseKeysRecursively(data[0]['location'][list(data[0]
+			['location'].keys())[0]], sheet1, 1, 1, 0, callbacks.keys())
+		cindex += 1
 		for location in data:
-			self.__parseJSONrecursively(location, sheet1, 1, cindex, 0, {'timestamp' : self.__parseTimeStamps, 'opening_hours' : self.__parseOpeningHours})
+			self.__parseJSONrecursively(location['location'][list(location['location'].keys())[0]], sheet1, 1, cindex, 0, callbacks)
+			cindex += 1
+		self.workbook.save(self.dstpath)
+
+	def getInfo(self, kind, timebegin, timeend):
+		queryparams =	{'location[]' 	: [self.mainlib, self.slibs], 
+						 'sublocs' 		: 0,
+						 'values' 		: kind,
+						 'before' 		: 'now',
+						 'limit' 		: 20}
+		r = requests.get(url = self.url_sf, params = queryparams)
+		data = r.json()
+		# write back the json from server to local hard drive for debugging purposes
+		with open('libdata.json', 'w+') as ld:
+			ld.write(r.text)
+		sheet = self.workbook.create_sheet(kind)
+		cindex = 1
+		callbacks = {kind : self.__parseTimeSeries, 'timestamp' : self.__parseTimeStamps}
+		self.__parseKeysRecursively(data, sheet, 1, 1, 0, callbacks.keys())
+		for location in data:
+			# pass callbacks for parsing the timestamps and the opening hours in the library data
+			# callbacks = {'timestamp' : self.__parseTimeStamps}
+			# self.__parseJSONrecursively(location[kind], sheetSeats, 1, cindex, 0, callbacks)
+			self.__parseTimeSeries(kind, location[kind], sheet, cindex)
 			cindex += 2
 		self.workbook.save(self.dstpath)
+
+	def __parseTimeSeries(self, kind, data, sheet, column):
+		row = 3
+		#print(data)
+		for pointInTime in data[next(iter(data))]:
+			#print(pointInTime)
+			sheet.cell(row, column).value = str(self.__parseTimeStamps(pointInTime['timestamp']))
+			sheet.cell(row, column + 1).value = pointInTime[self.timeSeriesKeys[kind]]
+			row += 1
 
 	def __parseOpeningHours(self, data):
 		ohlist = []
@@ -96,27 +142,43 @@ class Model(object):
 			csv_data = csv.writer(csv_file)
 			#self.__parseJSONrecursively(data, csv_data)
 
+	# parse an entry identified as value with given callback function
+	def __addValue(self, sheet, row, column, data, callback):
+		oldCellValue = sheet.cell(row, column).value
+		newValue = callback(data)
+		if (not oldCellValue):
+			sheet.cell(row, column).value = str(newValue)
+		elif (isinstance(oldCellValue, str)):
+			sheet.cell(row, column).value += ", " + str(newValue)
+
+	# It is possible to pass a dict of callbacks, the key is the key in the data the callback should parse
+	def __parseKeysRecursively(self, json_data, sheet, row, column, level, keysbreak):
+		if (isinstance(json_data, list)):
+			for element in json_data:
+				self.__parseKeysRecursively(element, sheet, row, column, level + 1, keysbreak)
+		elif (isinstance(json_data, dict)):
+			addoff = 1
+			for key in json_data.keys():
+				sheet.cell(row + addoff, column).value = key
+				if (key not in keysbreak):
+					self.__parseKeysRecursively(json_data[key], sheet, row + addoff, column, level + 1, keysbreak)
+				addoff = addoff + 1
+
 	def __parseJSONrecursively(self, json_data, sheet, row, column, level, callback):
 		if (isinstance(json_data, list)):
 			for element in json_data:
 				self.__parseJSONrecursively(element, sheet, row, column, level + 1, callback)
 		elif (isinstance(json_data, dict)):
-			addoff = 0
+			addoff = 1
+			#isect = intersection(json_data.keys(), callback.keys())
 			for key in json_data.keys():
-				addoff = addoff + 1
-				sheet.cell(row + addoff, column).value = key
-				if (keybreak in callback.keys()):
-					fcn = callback[keybreak]
-					value = fcn(json_data[keybreak])
-					sheet.cell(row + addoff, column + 1).value = str(value)
+				if key in callback.keys():
+					self.__addValue(sheet, row + addoff, column + 1, json_data[key], callback[key])
 				else:
 					self.__parseJSONrecursively(json_data[key], sheet, row + addoff, column, level + 1, callback)
+				addoff = addoff + 1
 		else:
-			value = sheet.cell(row, column + 1).value
-			if (not value):
-				sheet.cell(row, column + 1).value = json_data
-			elif (isinstance(value, str)):
-				sheet.cell(row, column + 1).value = value + ", " + str(json_data)
+			self.__addValue(sheet, row, column + 1, json_data, identityFunction)
 
 
 class ViewController(object):
@@ -130,3 +192,4 @@ class ViewController(object):
 m = Model(URL, 'data.xlsx')
 c = ViewController(m)
 m.getLibSpecTable()
+m.getInfo('seatestimate', [],[])
