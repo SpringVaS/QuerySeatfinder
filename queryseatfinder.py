@@ -77,7 +77,7 @@ class Model(object):
 		queryparams =	{'location[]' 	: [self.mainlib, self.slibs], 
 						 'sublocs' 		: 0,
 						 'values' 		: kind,
-						 'before' 		: '-5day',
+						 'before' 		: 'now',
 						 'limit' 		: 1000}
 		r = requests.get(url = self.url_sf, params = queryparams)
 		data = r.json()
@@ -89,26 +89,33 @@ class Model(object):
 		callbacks = {kind : self.__parseTimeSeries, 'timestamp' : self.__parseTimeStamps}
 		self.__parseKeysRecursively(data, sheet, 1, 1, 0, callbacks.keys())
 		timeSeries = {}
+		resampled = {}
 		for location in data:
 			# pass callbacks for parsing the timestamps and the opening hours in the library data
 			# callbacks = {'timestamp' : self.__parseTimeStamps}
 			# self.__parseJSONrecursively(location[kind], sheetSeats, 1, cindex, 0, callbacks)
 			locationData = location[kind]
 			locationKey = next(iter(locationData))
-			timeSeries[locationKey] =  self.__parseTimeSeries(kind, locationData[locationKey])
+			pddf =  self.__parseTimeSeries(kind, locationData[locationKey])
+			bars = pddf.occupied_seats.resample('15Min').mean()
+			resampled[locationKey] = bars
+			timeSeries[locationKey] = pddf
 			#timeSeries[locationKey].rename(str(locationKey))
 			cindex += 2
-		#print(timeSeries)
-		twoBibs = timeSeries['LSW'].merge(timeSeries['FBI'], how='inner', on='timestamp')
-		print(twoBibs)
-		self.workbook.save(self.dstpath)
+		print(timeSeries)
+		rawvssampled = timeSeries['LSW'].merge(resampled['LSW'], how='outer', on='timestamp')
+		rawvssampled = rawvssampled.sort_index(ascending = True)
+		rawvssampled.to_excel(self.dstpath)
+		#twoBibs = timeSeries['LSW'].merge(timeSeries['FBI'], how='inner', on='timestamp'
+		#self.workbook.save(self.dstpath)
 
 	def __parseTimeSeries(self, kind, data):
 		timestamp_list = [self.__parseTimeStamps(pointInTime['timestamp']) for pointInTime in data]
 		value_list = [pointInTime[self.timeSeriesKeys[kind]] for pointInTime in data]
 
-		value_dict = {"timestamp" : timestamp_list, "occupied_seats" : value_list}
+		value_dict = {'timestamp' : timestamp_list, 'occupied_seats' : value_list}
 		timeSeriesDataFrame = pd.DataFrame(value_dict)
+		timeSeriesDataFrame = timeSeriesDataFrame.set_index(['timestamp'])
 		return timeSeriesDataFrame
 
 	def __parseOpeningHours(self, data):
@@ -197,4 +204,4 @@ class ViewController(object):
 m = Model(URL, 'data.xlsx')
 c = ViewController(m)
 m.getLibSpecTable()
-m.getInfo('seatestimate', [],[])
+m.getInfo('seatestimate', pd.Timestamp('2019-12-08 08:00:00'), pd.Timestamp('now'))
