@@ -1,7 +1,6 @@
 import requests
 import json
 import csv
-import datetime
 
 from openpyxl import Workbook
 
@@ -44,7 +43,7 @@ class Model(object):
 
 		self.vtypes = {'location[]', 'sublocs'}
 
-		self.timeSeriesKeys = {'seatestimate' : 'occupied_seats'}
+		self.timeSeriesKeys = {'seatestimate' : 'occupied_seats', 'manualcount' : 'occupied_seats'}
 
 	def __del__(self):
 		pass
@@ -78,8 +77,8 @@ class Model(object):
 		queryparams =	{'location[]' 	: [self.mainlib, self.slibs], 
 						 'sublocs' 		: 0,
 						 'values' 		: kind,
-						 'before' 		: 'now',
-						 'limit' 		: 20}
+						 'before' 		: '-5day',
+						 'limit' 		: 1000}
 		r = requests.get(url = self.url_sf, params = queryparams)
 		data = r.json()
 		# write back the json from server to local hard drive for debugging purposes
@@ -89,22 +88,28 @@ class Model(object):
 		cindex = 1
 		callbacks = {kind : self.__parseTimeSeries, 'timestamp' : self.__parseTimeStamps}
 		self.__parseKeysRecursively(data, sheet, 1, 1, 0, callbacks.keys())
+		timeSeries = {}
 		for location in data:
 			# pass callbacks for parsing the timestamps and the opening hours in the library data
 			# callbacks = {'timestamp' : self.__parseTimeStamps}
 			# self.__parseJSONrecursively(location[kind], sheetSeats, 1, cindex, 0, callbacks)
-			self.__parseTimeSeries(kind, location[kind], sheet, cindex)
+			locationData = location[kind]
+			locationKey = next(iter(locationData))
+			timeSeries[locationKey] =  self.__parseTimeSeries(kind, locationData[locationKey])
+			#timeSeries[locationKey].rename(str(locationKey))
 			cindex += 2
+		#print(timeSeries)
+		twoBibs = timeSeries['LSW'].merge(timeSeries['FBI'], how='inner', on='timestamp')
+		print(twoBibs)
 		self.workbook.save(self.dstpath)
 
-	def __parseTimeSeries(self, kind, data, sheet, column):
-		row = 3
-		#print(data)
-		for pointInTime in data[next(iter(data))]:
-			#print(pointInTime)
-			sheet.cell(row, column).value = str(self.__parseTimeStamps(pointInTime['timestamp']))
-			sheet.cell(row, column + 1).value = pointInTime[self.timeSeriesKeys[kind]]
-			row += 1
+	def __parseTimeSeries(self, kind, data):
+		timestamp_list = [self.__parseTimeStamps(pointInTime['timestamp']) for pointInTime in data]
+		value_list = [pointInTime[self.timeSeriesKeys[kind]] for pointInTime in data]
+
+		value_dict = {"timestamp" : timestamp_list, "occupied_seats" : value_list}
+		timeSeriesDataFrame = pd.DataFrame(value_dict)
+		return timeSeriesDataFrame
 
 	def __parseOpeningHours(self, data):
 		ohlist = []
@@ -132,7 +137,7 @@ class Model(object):
 			return data
 		keylist = list(data.keys());
 		if (keylist[0] == 'date'):
-			return datetime.datetime.strptime(data['date'], "%Y-%m-%d %H:%M:%S.%f")
+			return pd.Timestamp(data['date'])
 
 	def obtainDataFromServer(self, parameters):
 		r = requests.get(url = self.url_sf, params = parameters)
