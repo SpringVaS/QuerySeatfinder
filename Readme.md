@@ -1,14 +1,12 @@
 # Seatfinder Query to Excel
 
-This is a little tool that writes Databank entries from the KIT Seatfinder Database into an excel file.
+This is a little tool that writes Databank entries from the KIT Seatfinder Database into an excel file. The parameters can, as of now, only be entered into the script itself.
 
 ## Depencencies
 
-You need to run Python3 with the following packages
+Just run the
 
 ```
-default: json, functools
+pip install -r requirements.txt
 ```
-```
-pip3 install: numpy, pandas, requests, openpyxl
-```
+command
