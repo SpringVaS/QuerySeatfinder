@@ -1,3 +1,14 @@
 # Seatfinder Query to Excel
 
-Hierbei handelt es sich um ein Toll, welches die Seatfinder Datenbank der Universitätsbibliotheken in Karlsruhe in einem gegebenen Zeitpunkt ausliest und die Werte in eine ExcelTabelle schreibt. 
+This is a little tool that writes Databank entries from the KIT Seatfinder Database into an excel file.
+
+## Depencencies
+
+You need to run Python3 with the following packages
+
+```
+default: json, functools
+```
+```
+pip3 install: numpy, pandas, requests, openpyxl
+```
