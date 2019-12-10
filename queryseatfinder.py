@@ -51,8 +51,6 @@ class Model(object):
 		workbook = Workbook()
 		workbook.save(dstpath)
 
-
-
 	def __del__(self):
 		pass
 
@@ -82,18 +80,22 @@ class Model(object):
 			cindex += 1
 		excel_workbook.save(self.dstpath)
 
-	def getInfo(self, kind, timebegin, timeend):
-		queryparams =	{'location[]' 	: [self.mainlib, self.slibs], 
+	def __queryServer(self, kind, location_list, timebegin, timeend):
+		queryparams =	{'location[]' 	: location_list, 
 						 'sublocs' 		: 0,
 						 'values' 		: kind,
-						 'before' 		: 'now',
-						 
+						 'before' 		: timeend,
 						 'limit' 		: 1000}
 		r = requests.get(url = self.url_sf, params = queryparams)
 		data = r.json()
 		# write back the json from server to local hard drive for debugging purposes
 		with open('libdata.json', 'w+') as ld:
 			ld.write(r.text)
+		return data
+
+	def getInfo(self, kind, timebegin, timeend):
+		data = self.__queryServer(kind, [self.mainlib, self.slibs], timebegin, timeend)
+
 		excel_workbook = load_workbook(self.dstpath)
 		cindex = 1
 		#callbacks = {kind : self.__parseTimeSeries, 'timestamp' : self.__parseTimeStamps}
@@ -103,19 +105,30 @@ class Model(object):
 			locationData = location[kind]
 			locationKey = next(iter(locationData))
 			pddf =  self.__parseTimeSeries(kind, locationData, locationKey)
+
+			oldestTime = pddf.iloc[0].name 
+			while oldestTime > timebegin:
+				reload_data = self.__queryServer(kind, locationKey, timebegin, oldestTime)
+				for locationr in reload_data:
+					pddfr =  self.__parseTimeSeries(kind, locationr[kind], next(iter(locationr[kind])))
+					#print(pddfr)
+					pddf = pddf.append(pddfr)
+					oldestTime = pddfr.iloc[0].name
+			pddf = pddf[pddf.index >= timebegin]
+
 			sampleddf = pddf.resample('15Min').mean()
-			resampled[locationKey] = sampleddf
+			resampled[locationKey] = sampleddf.round()
 			#timeSeries[locationKey].rename(str(locationKey))
 			cindex += 2
-		print(resampled)
+		#print(resampled)
 
 		#combinedData = pd.DataFrame({'timestamp': []})
 		#combinedData = combinedData.set_index(['timestamp'])
 		#for key in resampled.keys():
 		#	combinedData = combinedData.merge(resampled[key], how='outer', on='timestamp')
 
-		combinedData = functools.reduce(lambda left,right: pd.merge(left,right,on='timestamp', how = 'outer'), resampled.values())
-		combinedData = combinedData.sort_index(ascending = True)
+		combinedData = functools.reduce(lambda left,right: pd.merge(left,right,on='timestamp', how = 'outer').fillna(0), resampled.values())
+		combinedData = combinedData.sort_index(ascending = False)
 		writer = pd.ExcelWriter(self.dstpath, engine = 'openpyxl')
 		writer.book = excel_workbook
 
@@ -219,4 +232,4 @@ class ViewController(object):
 m = Model(URL, 'data.xlsx')
 c = ViewController(m)
 m.getLibSpecTable()
-m.getInfo('seatestimate', pd.Timestamp('2018-11-28 08:00:00'), pd.Timestamp('now'))
+m.getInfo('seatestimate', pd.Timestamp('2018-10-14 08:00:00'), pd.Timestamp('2018-10-15 22:00:00'))
