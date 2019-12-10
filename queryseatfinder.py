@@ -71,13 +71,19 @@ class Model(object):
 		excel_workbook = load_workbook(self.dstpath)
 		sheet1 = excel_workbook.create_sheet('Libraries')
 		callbacks = {'timestamp' : self.__parseTimeStamps, 'opening_hours' : self.__parseOpeningHours}
-		cindex = 1
+		cindex = 0
 		self.__parseKeysRecursively(data[0]['location'][list(data[0]
-			['location'].keys())[0]], sheet1, 1, 1, 0, callbacks.keys())
+			['location'].keys())[0]], sheet1, 0, 1, 0, callbacks.keys())
 		cindex += 1
 		for location in data:
-			self.__parseJSONrecursively(location['location'][list(location['location'].keys())[0]], sheet1, 1, cindex, 0, callbacks)
+			self.__parseJSONrecursively(location['location'][list(location['location'].keys())[0]], sheet1, 0, cindex, 0, callbacks)
 			cindex += 1
+
+		sheet1.column_dimensions['A'].width = 25
+		list_column_names = [chr(i) for i in range(ord('B'),ord('Z')+1)]
+
+		for colletter in list_column_names:
+			sheet1.column_dimensions[colletter].width = 50
 		excel_workbook.save(self.dstpath)
 
 	def __queryServer(self, kind, location_list, timebegin, timeend):
@@ -131,8 +137,9 @@ class Model(object):
 		combinedData = combinedData.sort_index(ascending = False)
 		writer = pd.ExcelWriter(self.dstpath, engine = 'openpyxl')
 		writer.book = excel_workbook
-
 		combinedData.to_excel(writer, sheet_name = kind)
+		sheet = writer.sheets[kind]
+		sheet.column_dimensions['A'].width = 30
 		writer.save()
 		writer.close()
 
@@ -141,7 +148,7 @@ class Model(object):
 		timestamp_list = [self.__parseTimeStamps(pointInTime['timestamp']) for pointInTime in data_list]
 		value_list = [pointInTime[self.timeSeriesKeys[kind]] for pointInTime in data_list]
 
-		value_dict = {'timestamp' : timestamp_list, self.timeSeriesKeys[kind] +  " " + str(locationKey) : value_list}
+		value_dict = {'timestamp' : timestamp_list, str(locationKey) : value_list}
 		timeSeriesDataFrame = pd.DataFrame(value_dict)
 		timeSeriesDataFrame = timeSeriesDataFrame.set_index(['timestamp'])
 		return timeSeriesDataFrame
@@ -232,4 +239,8 @@ class ViewController(object):
 m = Model(URL, 'data.xlsx')
 c = ViewController(m)
 m.getLibSpecTable()
-m.getInfo('seatestimate', pd.Timestamp('2018-10-14 08:00:00'), pd.Timestamp('2018-10-15 22:00:00'))
+
+timebegin = pd.Timestamp('2018-10-15 07:00:00')
+timeend   = pd.Timestamp('2019-03-31 22:00:00')
+
+m.getInfo('seatestimate',timebegin, timeend)
