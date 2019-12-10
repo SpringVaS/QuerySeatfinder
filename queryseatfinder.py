@@ -2,9 +2,12 @@ import requests
 import json
 import csv
 
-from openpyxl import Workbook
+from openpyxl import Workbook, load_workbook
 
 import pandas as pd
+import numpy as np
+
+import functools
 
 URL = "https://seatfinder.bibliothek.kit.edu/karlsruhe/getdata.php"
 
@@ -23,27 +26,32 @@ class Model(object):
 	def __init__(self, url_seatfinder, dstpath):
 		self.url_sf = url_seatfinder
 		self.dstpath = dstpath
-		self.workbook = Workbook()
 		# Reading halls LS
 		self.mainlib = {'LSG', 		# Gesellschaftswissenschaften
 						'LSM', 		# Medienzentrum
 						'LST', 		# Technik
 						'LSN', 		# Naturwissenschaften
 						'LSW', 		# Wiwi und Informatik
-						'LBS', 		# Lehrbuchsammlung
-						'BIB-N'} 	# KIT-Bibliothek Nord
+						'LBS',} 		# Lehrbuchsammlung
+						#'BIB-N'} 	# KIT-Bibliothek Nord. Am Campus Nord
 		# Specific Libraries
 		self.slibs =   {'FBC', 		# Chemie
 						'FBP',		# Physik
 						'LAF',		# Lernzentrum am Fasanenschloesschen}
 						'FBA',		# Architektur
 						'FBI',		# Informatik
-						'FBM',		# Mathematik
-						'FBW'}		# Wiwi
+						'FBM',}		# Mathematik
+						#'FBW'}		# Wiwi - zur Zeit geschlossen
 
 		self.vtypes = {'location[]', 'sublocs'}
 
 		self.timeSeriesKeys = {'seatestimate' : 'occupied_seats', 'manualcount' : 'occupied_seats'}
+
+		# Create Exel File
+		workbook = Workbook()
+		workbook.save(dstpath)
+
+
 
 	def __del__(self):
 		pass
@@ -62,7 +70,8 @@ class Model(object):
 		# write back the json from server to local hard drive for debugging purposes
 		with open('libdata.json', 'w+') as ld:
 			ld.write(r.text)
-		sheet1 = self.workbook.create_sheet('Libraries')
+		excel_workbook = load_workbook(self.dstpath)
+		sheet1 = excel_workbook.create_sheet('Libraries')
 		callbacks = {'timestamp' : self.__parseTimeStamps, 'opening_hours' : self.__parseOpeningHours}
 		cindex = 1
 		self.__parseKeysRecursively(data[0]['location'][list(data[0]
@@ -71,49 +80,55 @@ class Model(object):
 		for location in data:
 			self.__parseJSONrecursively(location['location'][list(location['location'].keys())[0]], sheet1, 1, cindex, 0, callbacks)
 			cindex += 1
-		self.workbook.save(self.dstpath)
+		excel_workbook.save(self.dstpath)
 
 	def getInfo(self, kind, timebegin, timeend):
 		queryparams =	{'location[]' 	: [self.mainlib, self.slibs], 
 						 'sublocs' 		: 0,
 						 'values' 		: kind,
 						 'before' 		: 'now',
+						 
 						 'limit' 		: 1000}
 		r = requests.get(url = self.url_sf, params = queryparams)
 		data = r.json()
 		# write back the json from server to local hard drive for debugging purposes
 		with open('libdata.json', 'w+') as ld:
 			ld.write(r.text)
-		sheet = self.workbook.create_sheet(kind)
+		excel_workbook = load_workbook(self.dstpath)
 		cindex = 1
-		callbacks = {kind : self.__parseTimeSeries, 'timestamp' : self.__parseTimeStamps}
-		self.__parseKeysRecursively(data, sheet, 1, 1, 0, callbacks.keys())
-		timeSeries = {}
+		#callbacks = {kind : self.__parseTimeSeries, 'timestamp' : self.__parseTimeStamps}
+		#self.__parseKeysRecursively(data, sheet, 1, 1, 0, callbacks.keys())
 		resampled = {}
 		for location in data:
-			# pass callbacks for parsing the timestamps and the opening hours in the library data
-			# callbacks = {'timestamp' : self.__parseTimeStamps}
-			# self.__parseJSONrecursively(location[kind], sheetSeats, 1, cindex, 0, callbacks)
 			locationData = location[kind]
 			locationKey = next(iter(locationData))
-			pddf =  self.__parseTimeSeries(kind, locationData[locationKey])
-			bars = pddf.occupied_seats.resample('15Min').mean()
-			resampled[locationKey] = bars
-			timeSeries[locationKey] = pddf
+			pddf =  self.__parseTimeSeries(kind, locationData, locationKey)
+			sampleddf = pddf.resample('15Min').mean()
+			resampled[locationKey] = sampleddf
 			#timeSeries[locationKey].rename(str(locationKey))
 			cindex += 2
-		print(timeSeries)
-		rawvssampled = timeSeries['LSW'].merge(resampled['LSW'], how='outer', on='timestamp')
-		rawvssampled = rawvssampled.sort_index(ascending = True)
-		rawvssampled.to_excel(self.dstpath)
-		#twoBibs = timeSeries['LSW'].merge(timeSeries['FBI'], how='inner', on='timestamp'
-		#self.workbook.save(self.dstpath)
+		print(resampled)
 
-	def __parseTimeSeries(self, kind, data):
-		timestamp_list = [self.__parseTimeStamps(pointInTime['timestamp']) for pointInTime in data]
-		value_list = [pointInTime[self.timeSeriesKeys[kind]] for pointInTime in data]
+		#combinedData = pd.DataFrame({'timestamp': []})
+		#combinedData = combinedData.set_index(['timestamp'])
+		#for key in resampled.keys():
+		#	combinedData = combinedData.merge(resampled[key], how='outer', on='timestamp')
 
-		value_dict = {'timestamp' : timestamp_list, 'occupied_seats' : value_list}
+		combinedData = functools.reduce(lambda left,right: pd.merge(left,right,on='timestamp', how = 'outer'), resampled.values())
+		combinedData = combinedData.sort_index(ascending = True)
+		writer = pd.ExcelWriter(self.dstpath, engine = 'openpyxl')
+		writer.book = excel_workbook
+
+		combinedData.to_excel(writer, sheet_name = kind)
+		writer.save()
+		writer.close()
+
+	def __parseTimeSeries(self, kind, data, locationKey):
+		data_list = data[locationKey]
+		timestamp_list = [self.__parseTimeStamps(pointInTime['timestamp']) for pointInTime in data_list]
+		value_list = [pointInTime[self.timeSeriesKeys[kind]] for pointInTime in data_list]
+
+		value_dict = {'timestamp' : timestamp_list, self.timeSeriesKeys[kind] +  " " + str(locationKey) : value_list}
 		timeSeriesDataFrame = pd.DataFrame(value_dict)
 		timeSeriesDataFrame = timeSeriesDataFrame.set_index(['timestamp'])
 		return timeSeriesDataFrame
@@ -204,4 +219,4 @@ class ViewController(object):
 m = Model(URL, 'data.xlsx')
 c = ViewController(m)
 m.getLibSpecTable()
-m.getInfo('seatestimate', pd.Timestamp('2019-12-08 08:00:00'), pd.Timestamp('now'))
+m.getInfo('seatestimate', pd.Timestamp('2018-11-28 08:00:00'), pd.Timestamp('now'))
