@@ -1,6 +1,5 @@
 import requests
 import json
-import csv
 
 from openpyxl import Workbook, load_workbook
 
@@ -241,6 +240,6 @@ c = ViewController(m)
 m.getLibSpecTable()
 
 timebegin = pd.Timestamp('2018-10-15 07:00:00')
-timeend   = pd.Timestamp('2019-03-31 22:00:00')
+timeend   = pd.Timestamp('2018-10-15 22:00:00')
 
 m.getInfo('seatestimate',timebegin, timeend)
