@@ -63,14 +63,13 @@ class Model(object):
                 reload_data = self.__queryServer(kind, locationKey, timebegin, oldestTime)
                 for locationr in reload_data:
                     pddfr =  self.__parseTimeSeries(kind, locationr[kind], next(iter(locationr[kind])))
-                    #print(pddfr)
                     pddf = pddf.append(pddfr)
                     oldestTime = pddfr.iloc[0].name
             pddf = pddf[pddf.index >= timebegin]
 
             sampleddf = pddf.resample('15Min').mean()
             resampled[locationKey] = sampleddf.round()
-        #print(resampled)
+        
         combinedData = functools.reduce(lambda left,right: 
             pd.merge(left,right,on='timestamp', how = 'outer').fillna(0), 
             resampled.values())
@@ -107,7 +106,7 @@ class Model(object):
 
         return pd.DataFrame(staticlibdata)
 
-    def writeInfoToExcel(self, dataframe, sheet_name):
+    def writeInfoToExcel(self, dataframe, sheet_name, autoFormat):
         excel_workbook = load_workbook(self.dstpath)
         writer = pd.ExcelWriter(self.dstpath, engine = 'openpyxl')
         writer.book = excel_workbook
@@ -116,6 +115,8 @@ class Model(object):
         sheet.column_dimensions['A'].width = 30
         writer.save()
         writer.close()
+        if autoFormat:
+            self.autoFormatSheet(sheet_name)
 
     def autoFormatSheet(self, sheet_name):
         excel_workbook = load_workbook(self.dstpath)
@@ -125,6 +126,12 @@ class Model(object):
             length = max(len(myutils.as_text(cell.value)) for cell in column)
             sheet.column_dimensions[myutils.letterFromIndex(column[0].column)].width = length
         excel_workbook.save(self.dstpath)
+
+    def deleteStandartSheet(self):
+        excel_workbook = load_workbook(self.dstpath)
+        if len(excel_workbook.sheetnames) > 1:
+            del excel_workbook['Sheet']
+            excel_workbook.save(self.dstpath)
 
     def __parseTimeSeries(self, kind, data, locationKey):
         data_list = data[locationKey]
@@ -220,21 +227,12 @@ class Model(object):
         print((mon + 1).strftime("%A"))
 
 
-class ViewController(object):
-    def __init__(self, pModel):
-        self.model = pModel
-
-    def buildParameters(self):
-        PARAMS = {'location[]' : self.model.mainlib, 'values' : 'location', 'before' : 'now', 'limit' : 20}
-        return PARAMS
-
 m = Model(URL, 'data.xlsx')
-c = ViewController(m)
 
-m.writeInfoToExcel(m.getStaticLibData(), "Libraries")
-m.autoFormatSheet("Libraries")
+m.writeInfoToExcel(m.getStaticLibData(), "Libraries", True)
+m.deleteStandartSheet()
 
 timebegin = pd.Timestamp('2018-10-15 07:00:00')
-timeend   = pd.Timestamp('2019-03-31 22:15:00')
+timeend   = pd.Timestamp('2018-10-15 22:15:00')
 
-m.writeInfoToExcel(m.getInfo('seatestimate',timebegin, timeend), "occupied seats")
+m.writeInfoToExcel(m.getInfo('seatestimate',timebegin, timeend), "occupied seats", False)
