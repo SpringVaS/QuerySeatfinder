@@ -50,35 +50,6 @@ class Model(object):
     def __del__(self):
         pass
 
-    def getLibSpecTable(self):
-        queryparams =   {'location[]'   : [self.mainlib, self.slibs], 
-                         'sublocs'      : 1,
-                         'values'       : 'location',
-                         'before'       : 'now'}
-        r = requests.get(url = self.url_sf, params = queryparams)
-        data = r.json()
-        # write back the json from server to local hard drive for debugging purposes
-        with open('staticlibdata.json', 'w+') as ld:
-            ld.write(r.text)
-
-        excel_workbook = load_workbook(self.dstpath)
-        sheet1 = excel_workbook.create_sheet('Libraries')
-        callbacks = {'timestamp' : self.__parseTimeStamps, 'opening_hours' : self.__parseOpeningHours}
-        cindex = 0
-        self.__parseKeysRecursively(data[0]['location'][list(data[0]
-            ['location'].keys())[0]], sheet1, 0, 1, 0, callbacks.keys())
-        cindex += 1
-        for location in data:
-            self.__parseJSONrecursively(location['location'][list(location['location'].keys())[0]], sheet1, 0, cindex, 0, callbacks)
-            cindex += 1
-
-        sheet1.column_dimensions['A'].width = 25
-        list_column_names = [chr(i) for i in range(ord('B'),ord('Z')+1)]
-
-        for colletter in list_column_names:
-            sheet1.column_dimensions[colletter].width = 50
-        excel_workbook.save(self.dstpath)
-
     def getInfo(self, kind, timebegin, timeend):
         data = self.__queryServer(kind, [self.mainlib, self.slibs], timebegin, timeend)
         resampled = {}
