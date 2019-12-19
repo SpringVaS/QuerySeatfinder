@@ -1,3 +1,8 @@
+from __future__ import annotations
+from abc import ABC, abstractmethod
+from random import randrange
+from typing import List
+
 import requests
 import json
 import functools
@@ -11,10 +16,80 @@ import myutils
 
 URL = "https://seatfinder.bibliothek.kit.edu/karlsruhe/getdata.php"
 
-def identityFunction(data):
-	return data
+class Subject(ABC):
+	"""
+	The Subject interface declares a set of methods for managing subscribers.
+	"""
 
-class Model(object):
+	@abstractmethod
+	def attach(self, observer: Observer) -> None:
+		"""
+		Attach an observer to the subject.
+		"""
+		pass
+
+	@abstractmethod
+	def detach(self, observer: Observer) -> None:
+		"""
+		Detach an observer from the subject.
+		"""
+		pass
+
+	@abstractmethod
+	def notify(self) -> None:
+		"""
+		Notify all observers about an event.
+		"""
+		pass
+
+
+class Observer(ABC):
+	"""
+	The Observer interface declares the update method, used by subjects.
+	"""
+
+	@abstractmethod
+	def update(self, subject: Subject) -> None:
+		"""
+		Receive update from subject.
+		"""
+		pass
+
+
+class Model(Subject):
+
+	_state: int = None
+	
+	"""
+	For the sake of simplicity, the Subject's state, essential to all
+	subscribers, is stored in this variable.
+	"""
+
+	_observers: List[Observer] = []
+	"""
+	List of subscribers. In real life, the list of subscribers can be stored
+	more comprehensively (categorized by event type, etc.).
+	"""
+
+	def attach(self, observer: Observer) -> None:
+		print("Subject: Attached an observer.")
+		self._observers.append(observer)
+
+	def detach(self, observer: Observer) -> None:
+		self._observers.remove(observer)
+
+	"""
+	The subscription management methods.
+	"""
+
+	def notify(self) -> None:
+		"""
+		Trigger an update in each subscriber.
+		"""
+
+		print("Subject: Notifying observers...")
+		for observer in self._observers:
+			observer.update(self)
 
 	def __init__(self, url_seatfinder, dstpath):
 		self.url_sf = url_seatfinder
@@ -41,6 +116,7 @@ class Model(object):
 		self.timeSeriesKeys = {'seatestimate' : 'occupied_seats', 'manualcount' : 'occupied_seats'}
 
 		self.libMetadata = self.__getStaticLibData()
+		self.query_progress = 0
 
 		  # Create Exel File
 		workbook = Workbook()
@@ -55,6 +131,9 @@ class Model(object):
 	def getInfo(self, kind, timebegin, timeend):
 		data = self.__queryServer(kind, [self.mainlib, self.slibs], timebegin, timeend)
 		resampled = {}
+		self.query_progress = 0
+		self.notify()
+		ctn = 0
 		for location in data:
 			locationData = location[kind]
 			locationKey = next(iter(locationData))
@@ -71,6 +150,9 @@ class Model(object):
 
 			sampleddf = pddf.resample('15Min').mean()
 			resampled[locationKey] = sampleddf.round()
+			ctn += 1
+			self.query_progress = (ctn / len(data)) * 100
+			self.notify()
 		
 		combinedData = functools.reduce(lambda left,right: 
 			pd.merge(left,right,on='timestamp', how = 'outer').fillna(0), 
@@ -108,6 +190,9 @@ class Model(object):
 
 		return pd.DataFrame(staticlibdata)
 
+	def getQueryProgess(self):
+		return self.query_progress
+
 	def writeInfoToExcel(self, dataframe, sheet_name, autoFormat = False):
 		excel_workbook = load_workbook(self.dstpath)
 		writer = pd.ExcelWriter(self.dstpath, engine = 'openpyxl')
@@ -118,9 +203,9 @@ class Model(object):
 		writer.save()
 		writer.close()
 		if autoFormat:
-			self.autoFormatSheet(sheet_name)
+			self.__autoFormatSheet(sheet_name)
 
-	def autoFormatSheet(self, sheet_name):
+	def __autoFormatSheet(self, sheet_name):
 		excel_workbook = load_workbook(self.dstpath)
 		sheet = excel_workbook[sheet_name]
 
