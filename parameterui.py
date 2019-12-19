@@ -45,13 +45,13 @@ class ViewController(object):
 
 	def buttonPressed(self):
 
-		print(self.dateEntryFrom.get_date())
+		print(str(self.dateEntryFrom.get_date()) + ' ' + self.timeEntryFrom.get_time())
 
-		timebegin = pd.Timestamp('2018-10-15 07:00:00')
-		timeend   = pd.Timestamp('2018-10-15 22:15:00')
+		timebegin = pd.Timestamp(str(self.dateEntryFrom.get_date()) + ' ' + self.timeEntryFrom.get_time())
+		timeend   = pd.Timestamp(str(self.dateEntryTo.get_date()) + ' ' + self.timeEntryTo.get_time())
 
-		#occupancy = self.model.getInfo('seatestimate',timebegin, timeend)
-		#self.model.writeInfoToExcel(occupancy, "Seat Occupancy")
+		occupancy = self.model.getInfo('seatestimate',timebegin, timeend)
+		self.model.writeInfoToExcel(occupancy, "Seat Occupancy")
 
 
 m = qsf.Model(qsf.URL, 'data.xlsx')
