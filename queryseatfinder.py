@@ -131,8 +131,7 @@ class Model(Subject):
 	def getInfo(self, kind, timebegin, timeend):
 		data = self.__queryServer(kind, [self.mainlib, self.slibs], timebegin, timeend)
 		resampled = {}
-		self.query_progress = 0
-		self.notify()
+		self.__updateProgress(0)
 		ctn = 0
 		for location in data:
 			locationData = location[kind]
@@ -146,13 +145,13 @@ class Model(Subject):
 					pddfr =  self.__parseTimeSeries(kind, locationr[kind], next(iter(locationr[kind])))
 					pddf = pddf.append(pddfr)
 					oldestTime = pddfr.iloc[0].name
+					self.__updateProgress(self.query_progress + ((1 / len(data)) * ((oldestTime - timeend) / (timebegin - timeend))))
 			pddf = pddf[pddf.index >= timebegin]
 
 			sampleddf = pddf.resample('15Min').mean()
 			resampled[locationKey] = sampleddf.round()
 			ctn += 1
-			self.query_progress = (ctn / len(data)) * 100
-			self.notify()
+			self.__updateProgress((ctn / len(data)) * 100)
 		
 		combinedData = functools.reduce(lambda left,right: 
 			pd.merge(left,right,on='timestamp', how = 'outer').fillna(0), 
@@ -270,6 +269,10 @@ class Model(Subject):
 		with open('libdata.json', 'w+') as ld:
 			ld.write(r.text)
 		return data
+
+	def __updateProgress(self, value):
+		self.query_progress = value
+		self.notify()
 
 	# TO DO: Get Weekday Names from Python environment
 	def __defineWeekdayNames(self):

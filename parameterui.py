@@ -62,6 +62,9 @@ class ViewController(qsf.Observer):
 		timebegin = pd.Timestamp(str(self.dateEntryFrom.get_date()) + ' ' + self.timeEntryFrom.get_time())
 		timeend   = pd.Timestamp(str(self.dateEntryTo.get_date()) + ' ' + self.timeEntryTo.get_time())
 
+		print(timebegin)
+		print(timeend)
+
 		occupancy = self.model.getInfo('seatestimate',timebegin, timeend)
 		self.model.writeInfoToExcel(occupancy, "Seat Occupancy")
 
