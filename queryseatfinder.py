@@ -134,11 +134,12 @@ class Model(Subject):
 		self.__updateProgress(0)
 		ctn = 0
 		for location in data:
+			print(timebegin)
 			locationData = location[kind]
 			locationKey = next(iter(locationData))
 			pddf =  self.__parseTimeSeries(kind, locationData, locationKey)
 
-			oldestTime = pddf.iloc[0].name 
+			oldestTime = pddf.iloc[0].name
 			while oldestTime > timebegin:
 				reload_data = self.__queryServer(kind, locationKey, timebegin, oldestTime)
 				for locationr in reload_data:
@@ -148,7 +149,7 @@ class Model(Subject):
 					self.__updateProgress(self.query_progress + ((1 / len(data)) * ((oldestTime - timeend) / (timebegin - timeend))))
 			pddf = pddf[pddf.index >= timebegin]
 
-			sampleddf = pddf.resample('15Min').mean()
+			sampleddf = pddf.resample('15Min', closed = 'right', label ='right').mean()
 			resampled[locationKey] = sampleddf.round()
 			ctn += 1
 			self.__updateProgress((ctn / len(data)) * 100)
