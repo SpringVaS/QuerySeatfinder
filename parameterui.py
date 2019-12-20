@@ -5,6 +5,9 @@ from tkinter import ttk
 import tkcalendar
 import mytkwidgets as mw
 
+import datetime as dt
+from datetime import datetime
+
 import tkinter.font as tkFont
 
 import pandas as pd
@@ -56,6 +59,11 @@ class ViewController(qsf.Observer):
 
 		guiPane.pack(fill=tk.BOTH, expand=1)
 		self.progressbar.pack(padx = 10, pady = 10, fill=tk.X, expand=1)
+
+		self.timeEntryFrom.set_time(datetime.now() - dt.timedelta(hours = 2))
+		self.timeEntryTo.set_time(datetime.now())
+
+		self.dateEntryFrom.set_date(self.dateEntryTo.get_date() - dt.timedelta(days = 1))
 
 		for widget in guiPane.winfo_children():
 			self.__changeFontSize(widget, 12)

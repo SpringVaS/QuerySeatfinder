@@ -1,5 +1,5 @@
 import tkinter as tk
-
+from datetime import datetime
 # found at https://stackoverflow.com/questions/57034118/time-picker-for-tkinter 19.12.2019
 
 class TimeEntry(tk.Frame):
@@ -21,6 +21,13 @@ class TimeEntry(tk.Frame):
         if self.last_value == "59" and self.minstr.get() == "0":
             self.hourstr.set(int(self.hourstr.get())+1 if self.hourstr.get() !="23" else 0)
         self.last_value = self.minstr.get()
+
+    def set_time(self, pTime):
+        hours = pTime.strftime("%H")
+        minutes = pTime.strftime("%M")
+        self.hourstr.set(hours)
+        self.minstr.set(minutes)
+
 
     def get_time(self):
         timestr = str(self.hourstr.get()) + ':' + str(self.minstr.get()) + ':00'

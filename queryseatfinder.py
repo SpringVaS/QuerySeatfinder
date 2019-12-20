@@ -111,6 +111,8 @@ class Model(Subject):
 						'FBM'}     # Mathematik
 						#'FBW'}     # Wiwi - zur Zeit geschlossen
 
+		self.allLocationsOnCampus = [*(self.mainlib), *(self.slibs)]
+
 		self.vtypes = {'location[]', 'sublocs'}
 
 		self.timeSeriesKeys = {'seatestimate' : 'occupied_seats', 'manualcount' : 'occupied_seats'}
@@ -129,36 +131,49 @@ class Model(Subject):
 		pass
 
 	def getInfo(self, kind, timebegin, timeend):
-		data = self.__queryServer(kind, [self.mainlib, self.slibs], timebegin, timeend)
+
 		resampled = {}
-		self.__updateProgress(0)
-		ctn = 0
-		for location in data:
-			print(timebegin)
-			locationData = location[kind]
-			locationKey = next(iter(locationData))
-			pddf =  self.__parseTimeSeries(kind, locationData, locationKey)
 
-			oldestTime = pddf.iloc[0].name
+		location_index = 0
+		total_locations = len(self.allLocationsOnCampus)
+
+		for location_id in self.allLocationsOnCampus:
+			oldestTime = timeend
+			rawdata = pd.DataFrame()
 			while oldestTime > timebegin:
-				reload_data = self.__queryServer(kind, locationKey, timebegin, oldestTime)
-				for locationr in reload_data:
-					pddfr =  self.__parseTimeSeries(kind, locationr[kind], next(iter(locationr[kind])))
-					pddf = pddf.append(pddfr)
-					oldestTime = pddfr.iloc[0].name
-					self.__updateProgress(self.query_progress + ((1 / len(data)) * ((oldestTime - timeend) / (timebegin - timeend))))
-			pddf = pddf[pddf.index >= timebegin]
+				reload_data = self.__getInfoForLocationFromServer(location_id, kind, timebegin, oldestTime)
+				newOldestTime = reload_data.iloc[0].name
+				# assure strictly monotonous decline
+				if (not (newOldestTime < oldestTime)):
+					break
+				rawdata = rawdata.append(reload_data)
 
-			sampleddf = pddf.resample('15Min', closed = 'right', label ='right').mean()
-			resampled[locationKey] = sampleddf.round()
-			ctn += 1
-			self.__updateProgress((ctn / len(data)) * 100)
-		
+				time_progress = newOldestTime if newOldestTime > timebegin else timebegin
+				self.__updateProgress(self.getQueryProgess() + 
+					((oldestTime - time_progress) / (timeend - timebegin)) * (100 / (total_locations)))
+				oldestTime = newOldestTime
+
+			rawdata = rawdata[rawdata.index >= timebegin]
+			location_data = rawdata.resample('15Min', closed = 'right', label ='right').mean()
+			resampled[location_id] = location_data.round()
+			location_index += 1
+			self.__updateProgress((location_index / total_locations) * 100)
+
 		combinedData = functools.reduce(lambda left,right: 
 			pd.merge(left,right,on='timestamp', how = 'outer').fillna(0), 
 			resampled.values())
 		combinedData = combinedData.sort_index(ascending = False)
 		return combinedData
+
+	def __getInfoForLocationFromServer(self, location_id, kind, timebegin, timeend):
+		data = self.__queryServer(kind, location_id, timebegin, timeend)
+		assert (len(data) == 1), ("Please review location_id parameter" + str(len(data)))
+		pddf = None
+		for location in data:
+			locationData = location[kind]
+			pddf =  self.__parseTimeSeries(kind, locationData, location_id)
+		return pddf
+
 
 	def __getStaticLibData(self):
 		queryparams =    {'location[]'   : [self.mainlib, self.slibs], 
