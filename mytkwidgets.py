@@ -25,3 +25,10 @@ class TimeEntry(tk.Frame):
     def get_time(self):
         timestr = str(self.hourstr.get()) + ':' + str(self.minstr.get()) + ':00'
         return timestr
+
+    def cget(self, option):
+        return self.hour.cget(option)
+
+    def configure(self, font):
+        self.hour.configure(font = font)
+        self.min.configure(font = font)
