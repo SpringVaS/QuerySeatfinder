@@ -235,7 +235,7 @@ class Model(Subject):
 
 		for column in sheet.columns:
 			length = max(len(myutils.as_text(cell.value)) for cell in column)
-			sheet.column_dimensions[myutils.letterFromIndex(column[0].column)].width = length
+			sheet.column_dimensions[myutils.index_to_letter(column[0].column)].width = length
 		excel_workbook.save(self.dstpath)
 
 	def __delete_standard_sheet(self):

@@ -17,8 +17,7 @@ class ViewController(qsf.Observer):
 	
 	def __init__(self, model):
 		self.model = model
-		self.model.attach(self)
-		self.__build_gui()
+^		self.__build_gui()
 
 	def update(self, subject: qsf.Subject) -> None:
 		print("ConcreteObserverA: Reacted to the event " + str(self.model.get_progress()))
@@ -29,43 +28,43 @@ class ViewController(qsf.Observer):
 		self.window = tk.Tk()
 		self.window.title("Query Seatfinder")
 
-		guiPane = tk.Frame(self.window)
-		guiPane.rowconfigure(0, weight=1)
-		guiPane.columnconfigure(0, weight=1)
+		gui_pane = tk.Frame(self.window)
+		gui_pane.rowconfigure(0, weight=1)
+		gui_pane.columnconfigure(0, weight=1)
 
-		label = tk.Label(guiPane, text = "Select a period of time", font = ('Segoe UI', 12))
+		label = tk.Label(gui_pane, text = "Select a period of time", font = ('Segoe UI', 12))
 		label.grid(row = 0, columnspan = 2, padx = 10, pady = 10, sticky = 'w')
-		button_send_query = tk.Button(guiPane, text = 'OK', command = self.buttonPressed)
+		button_send_query = tk.Button(gui_pane, text = 'OK', command = self.buttonPressed)
 		button_send_query.grid(row = 3, column = 0, columnspan = 2, padx = 10, pady = 10, sticky = 'we')
 
-		self.dateEntryFrom = tkcalendar.DateEntry(guiPane, width=12, background='darkblue', 
+		self.dateentry_from = tkcalendar.DateEntry(gui_pane, width=12, background='darkblue', 
 			foreground='white', borderwidth=2)
-		self.dateEntryTo = tkcalendar.DateEntry(guiPane, width=12, background='darkblue', 
+		self.dateentry_to = tkcalendar.DateEntry(gui_pane, width=12, background='darkblue', 
 			foreground='white', borderwidth=2)
 
-		self.timeEntryFrom = mw.TimeEntry(guiPane)
-		self.timeEntryTo = mw.TimeEntry(guiPane)
+		self.timeentry_from = mw.TimeEntry(gui_pane)
+		self.timeentry_to = mw.TimeEntry(gui_pane)
 		
 		self.progressbar = ttk.Progressbar(self.window)
 
 		self.progressbar["maximum"] = 100
 		#self.progressbar.after(500, self.progress())
 
-		self.dateEntryFrom.grid(row = 1, column = 0, padx = 10, pady = 10,sticky = 'w')
-		self.timeEntryFrom.grid(row = 1, column = 1, padx = 10, pady = 10,sticky = 'e')
-		self.dateEntryTo.grid(row = 2, column = 0, padx = 10, pady = 10,sticky = 'w')
-		self.timeEntryTo.grid(row = 2, column = 1, padx = 10, pady = 10,sticky = 'e')
+		self.dateentry_from.grid(row = 1, column = 0, padx = 10, pady = 10,sticky = 'w')
+		self.timeentry_from.grid(row = 1, column = 1, padx = 10, pady = 10,sticky = 'e')
+		self.dateentry_to.grid(row = 2, column = 0, padx = 10, pady = 10,sticky = 'w')
+		self.timeentry_to.grid(row = 2, column = 1, padx = 10, pady = 10,sticky = 'e')
 		#self.progressbar.grid(row = 4, column = 0, columnspan = 2, padx = 10, pady = 10, sticky = 'we')
 
-		guiPane.pack(fill=tk.BOTH, expand=1)
+		gui_pane.pack(fill=tk.BOTH, expand=1)
 		self.progressbar.pack(padx = 10, pady = 10, fill=tk.X, expand=1)
 
-		self.timeEntryFrom.set_time(datetime.now() - dt.timedelta(hours = 2))
-		self.timeEntryTo.set_time(datetime.now())
+		self.timeentry_from.set_time(datetime.now() - dt.timedelta(hours = 2))
+		self.timeentry_to.set_time(datetime.now())
 
-		self.dateEntryFrom.set_date(self.dateEntryTo.get_date() - dt.timedelta(days = 1))
+		self.dateentry_from.set_date(self.dateentry_to.get_date() - dt.timedelta(days = 1))
 
-		for widget in guiPane.winfo_children():
+		for widget in gui_pane.winfo_children():
 			self.__changeFontSize(widget, 12)
 
 		self.window.mainloop()
@@ -75,8 +74,8 @@ class ViewController(qsf.Observer):
 		self.progressbar["value"] = 0
 		self.progressbar.update()
 
-		timebegin = pd.Timestamp(str(self.dateEntryFrom.get_date()) + ' ' + self.timeEntryFrom.get_time())
-		timeend   = pd.Timestamp(str(self.dateEntryTo.get_date()) + ' ' + self.timeEntryTo.get_time())
+		timebegin = pd.Timestamp(str(self.dateentry_from.get_date()) + ' ' + self.timeentry_from.get_time())
+		timeend   = pd.Timestamp(str(self.dateentry_to.get_date()) + ' ' + self.timeentry_to.get_time())
 
 		print(timebegin)
 		print(timeend)
