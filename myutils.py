@@ -6,3 +6,4 @@ def as_text(value):
 
 def letterFromIndex(index):
 	return chr(64 + (index % 26))
+

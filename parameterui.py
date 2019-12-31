@@ -18,14 +18,14 @@ class ViewController(qsf.Observer):
 	def __init__(self, model):
 		self.model = model
 		self.model.attach(self)
-		self.__buildGUI()
+		self.__build_gui()
 
 	def update(self, subject: qsf.Subject) -> None:
-		print("ConcreteObserverA: Reacted to the event " + str(self.model.getQueryProgess()))
-		self.progressbar["value"] = self.model.getQueryProgess()
+		print("ConcreteObserverA: Reacted to the event " + str(self.model.get_progress()))
+		self.progressbar["value"] = self.model.get_progress()
 		self.progressbar.update()
 
-	def __buildGUI(self):
+	def __build_gui(self):
 		self.window = tk.Tk()
 		self.window.title("Query Seatfinder")
 
@@ -81,8 +81,8 @@ class ViewController(qsf.Observer):
 		print(timebegin)
 		print(timeend)
 
-		occupancy = self.model.getInfo('seatestimate',timebegin, timeend)
-		self.model.writeInfoToExcel(occupancy, "Seat Occupancy")
+		occupancy = self.model.get_info('seatestimate',timebegin, timeend)
+		self.model.write_to_excel(occupancy, "Seat Occupancy")
 
 	def __changeFontSize(self, tk_elem, font_size):
 		new_font = tkFont.Font(font = tk_elem.cget("font"))

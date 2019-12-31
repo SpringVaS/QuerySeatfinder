@@ -7,6 +7,8 @@ import requests
 import json
 import functools
 
+from warnings import warn
+
 from openpyxl import Workbook, load_workbook
 
 import pandas as pd
@@ -117,39 +119,41 @@ class Model(Subject):
 
 		self.timeSeriesKeys = {'seatestimate' : 'occupied_seats', 'manualcount' : 'occupied_seats'}
 
-		self.libMetadata = self.__getStaticLibData()
+		self.libMetadata = self.__get_static_lib_data()
 		self.query_progress = 0
 
 		  # Create Exel File
 		workbook = Workbook()
 		workbook.save(dstpath)
 
-		self.writeInfoToExcel(self.libMetadata, "Libraires", True)
-		self.__deleteStandartSheet()
+		self.write_to_excel(self.libMetadata, "Libraires", True)
+		self.__delete_standard_sheet()
 
 	def __del__(self):
 		pass
 
-	def getInfo(self, kind, timebegin, timeend):
-
+	def get_info(self, kind, timebegin, timeend):
 		resampled = {}
-
 		location_index = 0
 		total_locations = len(self.allLocationsOnCampus)
-
 		for location_id in self.allLocationsOnCampus:
+			self.__update_progress((location_index / total_locations) * 100)
 			oldestTime = timeend
 			rawdata = pd.DataFrame()
 			while oldestTime > timebegin:
-				reload_data = self.__getInfoForLocationFromServer(location_id, kind, timebegin, oldestTime)
-				newOldestTime = reload_data.iloc[0].name
+				reload_data = self.__get_info_for_location_from_server(location_id, kind, timebegin, oldestTime)
+				newOldestTime = oldestTime
+				if (reload_data.size > 0):
+					newOldestTime = reload_data.iloc[0].name
+				else:
+					break
 				# assure strictly monotonous decline
 				if (not (newOldestTime < oldestTime)):
 					break
 				rawdata = rawdata.append(reload_data)
 
 				time_progress = newOldestTime if newOldestTime > timebegin else timebegin
-				self.__updateProgress(self.getQueryProgess() + 
+				self.__update_progress(self.get_progress() + 
 					((oldestTime - time_progress) / (timeend - timebegin)) * (100 / (total_locations)))
 				oldestTime = newOldestTime
 
@@ -157,7 +161,8 @@ class Model(Subject):
 			location_data = rawdata.resample('15Min', closed = 'right', label ='right').mean()
 			resampled[location_id] = location_data.round()
 			location_index += 1
-			self.__updateProgress((location_index / total_locations) * 100)
+
+		self.__update_progress(100)
 
 		combinedData = functools.reduce(lambda left,right: 
 			pd.merge(left,right,on='timestamp', how = 'outer').fillna(0), 
@@ -165,33 +170,37 @@ class Model(Subject):
 		combinedData = combinedData.sort_index(ascending = False)
 		return combinedData
 
-	def __getInfoForLocationFromServer(self, location_id, kind, timebegin, timeend):
-		data = self.__queryServer(kind, location_id, timebegin, timeend)
-		assert (len(data) == 1), ("Please review location_id parameter" + str(len(data)))
-		pddf = None
-		for location in data:
-			locationData = location[kind]
-			pddf =  self.__parseTimeSeries(kind, locationData, location_id)
+	def __get_info_for_location_from_server(self, location_id, kind, timebegin, timeend):
+		data = self.__query_server(kind, location_id, timebegin, timeend)
+		pddf = pd.DataFrame()
+		if (len(data) > 0):
+			assert (len(data) == 1), ("Please review location_id parameter " + str(len(data)))
+			for location in data:
+				locationData = location[kind]
+				pddf = pddf.append(self.__parse_timeseries(kind, locationData, location_id))
 		return pddf
 
 
-	def __getStaticLibData(self):
+	def __get_static_lib_data(self):
 		queryparams =    {'location[]'   : [self.mainlib, self.slibs], 
 						 'sublocs'      : 1,
 						 'values'       : 'location',
 						 'before'       : 'now'}
-		r = requests.get(url = self.url_sf, params = queryparams)
-		data = r.json()
-		# write back the json from server to local hard drive for debugging purposes
-		with open('staticlibdata.json', 'w+') as ld:
-			ld.write(r.text)
+		data = {}
+		try:
+			r = requests.get(url = self.url_sf, params = queryparams)
+			data = r.json()
+			# write back the json from server to local hard drive for debugging purposes
+			with open('staticlibdata.json', 'w+') as ld:
+				ld.write(r.text)
+			print('Load data from server and write back to file')
+		except requests.ConnectionError as e:
+			print('Load data from file')
+			with open('staticlibdata.json', 'r') as datafile:
+				data = json.load(datafile)
 
-		"""data = {}
-		with open('staticlibdata.json', 'r') as datafile:
-			data = json.load(datafile)"""
 
-
-		callbacks = {'timestamp' : self.__parseTimeStamps, 'opening_hours' : self.__parseOpeningHours}
+		callbacks = {'timestamp' : self.__parse_timestamps, 'opening_hours' : self.__parse_openinghours}
 
 		staticlibdata = {}
 		for location in data:
@@ -205,10 +214,10 @@ class Model(Subject):
 
 		return pd.DataFrame(staticlibdata)
 
-	def getQueryProgess(self):
+	def get_progress(self):
 		return self.query_progress
 
-	def writeInfoToExcel(self, dataframe, sheet_name, autoFormat = False):
+	def write_to_excel(self, dataframe, sheet_name, autoFormat = False):
 		excel_workbook = load_workbook(self.dstpath)
 		writer = pd.ExcelWriter(self.dstpath, engine = 'openpyxl')
 		writer.book = excel_workbook
@@ -218,9 +227,9 @@ class Model(Subject):
 		writer.save()
 		writer.close()
 		if autoFormat:
-			self.__autoFormatSheet(sheet_name)
+			self.__sheet_autoformat(sheet_name)
 
-	def __autoFormatSheet(self, sheet_name):
+	def __sheet_autoformat(self, sheet_name):
 		excel_workbook = load_workbook(self.dstpath)
 		sheet = excel_workbook[sheet_name]
 
@@ -229,15 +238,15 @@ class Model(Subject):
 			sheet.column_dimensions[myutils.letterFromIndex(column[0].column)].width = length
 		excel_workbook.save(self.dstpath)
 
-	def __deleteStandartSheet(self):
+	def __delete_standard_sheet(self):
 		excel_workbook = load_workbook(self.dstpath)
 		if len(excel_workbook.sheetnames) > 1:
 			del excel_workbook['Sheet']
 			excel_workbook.save(self.dstpath)
 
-	def __parseTimeSeries(self, kind, data, locationKey):
+	def __parse_timeseries(self, kind, data, locationKey):
 		data_list = data[locationKey]
-		timestamp_list = [self.__parseTimeStamps(pointInTime['timestamp']) for pointInTime in data_list]
+		timestamp_list = [self.__parse_timestamps(pointInTime['timestamp']) for pointInTime in data_list]
 		value_list = [pointInTime[self.timeSeriesKeys[kind]] for pointInTime in data_list]
 
 		value_dict = {'timestamp' : timestamp_list, locationKey : value_list}
@@ -245,14 +254,14 @@ class Model(Subject):
 		timeSeriesDataFrame = timeSeriesDataFrame.set_index(['timestamp'])
 		return timeSeriesDataFrame
 
-	def __parseOpeningHours(self, data):
+	def __parse_openinghours(self, data):
 		ohlist = []
 		# weekly opening hours
 		#print(data[keylist[1]])
 		for interval in data['weekly_opening_hours']:
 			openingHours_str = ""
-			opening = self.__parseTimeStamps(interval[0])
-			closing = self.__parseTimeStamps(interval[1])
+			opening = self.__parse_timestamps(interval[0])
+			closing = self.__parse_timestamps(interval[1])
 			weekday_opening = opening.strftime("%A")
 			weekday_closing = closing.strftime("%A")
 			time_opening = opening.strftime("%H:%M")
@@ -265,7 +274,7 @@ class Model(Subject):
 			ohlist.append(openingHours_str)
 		return ohlist
 
-	def __parseTimeStamps(self, data):
+	def __parse_timestamps(self, data):
 		#sheet.write(row, column, str(data))
 		if (not isinstance(data, dict)):
 			return data
@@ -273,20 +282,25 @@ class Model(Subject):
 		if (keylist[0] == 'date'):
 			return pd.Timestamp(data['date'])
 
-	def __queryServer(self, kind, location_list, timebegin, timeend):
+	def __query_server(self, kind, location_list, timebegin, timeend):
 		queryparams =   {'location[]'   : location_list, 
 						 'sublocs'      : 0,
 						 'values'       : kind,
 						 'before'       : timeend,
 						 'limit'        : 1000}
-		r = requests.get(url = self.url_sf, params = queryparams)
-		data = r.json()
-		# write back the json from server to local hard drive for debugging purposes
-		with open('libdata.json', 'w+') as ld:
-			ld.write(r.text)
+		data = {}
+		try:
+			r = requests.get(url = self.url_sf, params = queryparams)
+			data = r.json()
+			# write back the json from server to local hard drive for debugging purposes
+			with open('libdata.json', 'w+') as ld:
+				ld.write(r.text)
+		except requests.ConnectionError as e:
+			warn('No server connection')
+
 		return data
 
-	def __updateProgress(self, value):
+	def __update_progress(self, value):
 		self.query_progress = value
 		self.notify()
 
