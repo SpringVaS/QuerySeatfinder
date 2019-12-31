@@ -17,7 +17,8 @@ class ViewController(qsf.Observer):
 	
 	def __init__(self, model):
 		self.model = model
-^		self.__build_gui()
+		self.model.attach(self)
+		self.__build_gui()
 
 	def update(self, subject: qsf.Subject) -> None:
 		print("ConcreteObserverA: Reacted to the event " + str(self.model.get_progress()))
@@ -34,7 +35,7 @@ class ViewController(qsf.Observer):
 
 		label = tk.Label(gui_pane, text = "Select a period of time", font = ('Segoe UI', 12))
 		label.grid(row = 0, columnspan = 2, padx = 10, pady = 10, sticky = 'w')
-		button_send_query = tk.Button(gui_pane, text = 'OK', command = self.buttonPressed)
+		button_send_query = tk.Button(gui_pane, text = 'OK', command = self.button_pressed)
 		button_send_query.grid(row = 3, column = 0, columnspan = 2, padx = 10, pady = 10, sticky = 'we')
 
 		self.dateentry_from = tkcalendar.DateEntry(gui_pane, width=12, background='darkblue', 
@@ -65,11 +66,11 @@ class ViewController(qsf.Observer):
 		self.dateentry_from.set_date(self.dateentry_to.get_date() - dt.timedelta(days = 1))
 
 		for widget in gui_pane.winfo_children():
-			self.__changeFontSize(widget, 12)
+			self.__change_font_size(widget, 12)
 
 		self.window.mainloop()
 
-	def buttonPressed(self):
+	def button_pressed(self):
 
 		self.progressbar["value"] = 0
 		self.progressbar.update()
@@ -83,7 +84,7 @@ class ViewController(qsf.Observer):
 		occupancy = self.model.get_info('seatestimate',timebegin, timeend)
 		self.model.write_to_excel(occupancy, "Seat Occupancy")
 
-	def __changeFontSize(self, tk_elem, font_size):
+	def __change_font_size(self, tk_elem, font_size):
 		new_font = tkFont.Font(font = tk_elem.cget("font"))
 		size = new_font.actual()["size"]
 		new_font.configure(size=font_size)
