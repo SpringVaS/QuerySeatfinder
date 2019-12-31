@@ -4,6 +4,6 @@ def as_text(value):
 	else:
 		return str(value)
 
-def letterFromIndex(index):
+def index_to_letter(index):
 	return chr(64 + (index % 26))
 
