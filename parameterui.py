@@ -46,16 +46,13 @@ class ViewController(qsf.Observer):
 		self.timeentry_from = mw.TimeEntry(gui_pane)
 		self.timeentry_to = mw.TimeEntry(gui_pane)
 		
-		self.progressbar = ttk.Progressbar(self.window)
-
+		self.progressbar = ttk.Progressbar(self.window, mode = 'determinate')
 		self.progressbar["maximum"] = 100
-		#self.progressbar.after(500, self.progress())
 
 		self.dateentry_from.grid(row = 1, column = 0, padx = 10, pady = 10,sticky = 'w')
 		self.timeentry_from.grid(row = 1, column = 1, padx = 10, pady = 10,sticky = 'e')
 		self.dateentry_to.grid(row = 2, column = 0, padx = 10, pady = 10,sticky = 'w')
 		self.timeentry_to.grid(row = 2, column = 1, padx = 10, pady = 10,sticky = 'e')
-		#self.progressbar.grid(row = 4, column = 0, columnspan = 2, padx = 10, pady = 10, sticky = 'we')
 
 		gui_pane.pack(fill=tk.BOTH, expand=1)
 		self.progressbar.pack(padx = 10, pady = 10, fill=tk.X, expand=1)

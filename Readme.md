@@ -11,4 +11,4 @@ pip install -r requirements.txt
 ```
 command
 
-When using python 3.8, tkcalendar id needed in the newest version (not available from pip). It can be build from source. https://github.com/j4321/tkcalendar
+

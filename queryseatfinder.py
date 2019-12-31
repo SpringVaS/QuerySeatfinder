@@ -158,7 +158,7 @@ class Model(Subject):
 				oldestTime = newOldestTime
 
 			rawdata = rawdata[rawdata.index >= timebegin]
-			location_data = rawdata.resample('15Min', closed = 'right', label ='right').mean()
+			location_data = rawdata.resample('15Min', closed = 'right', label ='left').mean()
 			resampled[location_id] = location_data.round()
 			location_index += 1
 
