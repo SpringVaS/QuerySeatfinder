@@ -69,17 +69,30 @@ class ViewController(qsf.Observer):
 
 	def button_pressed(self):
 
+		# reset progressbar
 		self.progressbar["value"] = 0
 		self.progressbar.update()
 
-		timebegin = pd.Timestamp(str(self.dateentry_from.get_date()) + ' ' + self.timeentry_from.get_time())
-		timeend   = pd.Timestamp(str(self.dateentry_to.get_date()) + ' ' + self.timeentry_to.get_time())
+		# gather datetime input
 
-		print(timebegin)
-		print(timeend)
+		time_period = self.__get_entered_time_period()
 
-		occupancy = self.model.get_info('seatestimate',timebegin, timeend)
+		print(time_period[0])
+		print(time_period[-1])
+
+		occupancy = self.model.get_info('seatestimate',time_period[0], time_period[-1])
 		self.model.write_to_excel(occupancy, "Seat Occupancy")
+
+	def __get_entered_time_period(self):
+		date_entered_from 	= self.dateentry_from.get_date()
+		time_entered_from 	= self.timeentry_from.get_time()
+
+		date_entered_to		= self.dateentry_to.get_date()
+		time_entered_to		= self.timeentry_to.get_time()
+
+		timebegin = pd.Timestamp(str(date_entered_from) + ' ' + time_entered_from)
+		timeend   = pd.Timestamp(str(date_entered_to)   + ' ' + time_entered_to)
+		return (timebegin, timeend)
 
 	def __change_font_size(self, tk_elem, font_size):
 		new_font = tkFont.Font(font = tk_elem.cget("font"))
