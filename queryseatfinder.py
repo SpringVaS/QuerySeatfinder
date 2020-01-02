@@ -159,10 +159,16 @@ class Model(Subject):
 					((oldestTime - time_progress) / (timeend - timebegin)) * (100 / (total_locations)))
 				oldestTime = newOldestTime
 
-			rawdata = rawdata[rawdata.index >= timebegin]
+			#rawdata = rawdata[rawdata.index >= timebegin]
+			rawdata = rawdata.truncate(after = timebegin)
 			location_data = rawdata.resample('15Min').mean()
+			location_data = location_data.sort_index(ascending = False)
 			resampled[location_id] = location_data.round()
 			location_index += 1
+
+			# dataframe output for aggregation description
+			self.write_to_excel(rawdata, 'raw ' + str(location_id))
+			self.write_to_excel(location_data, 'resampled ' + str(location_id))
 
 
 		self.__update_progress(100)
