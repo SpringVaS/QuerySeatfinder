@@ -150,7 +150,9 @@ class Model(Subject):
 				# assure strictly monotonous decline
 				if (not (newOldestTime < oldestTime)):
 					break
-				rawdata = rawdata.append(reload_data)
+				
+				# keep data sorted
+				rawdata = rawdata.append(reload_data.sort_index(ascending = False))
 
 				time_progress = newOldestTime if newOldestTime > timebegin else timebegin
 				self.__update_progress(self.get_progress() + 
