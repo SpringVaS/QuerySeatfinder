@@ -17,8 +17,13 @@ class ViewController(qsf.Observer):
 	
 	def __init__(self, model):
 		self.model = model
+		# subscribe to model updates
 		self.model.attach(self)
 		self.__build_gui()
+
+	def __del__(self):
+		# unsubscribe from model updates
+		self.model.detach(self)
 
 	def update(self, subject: qsf.Subject) -> None:
 		print("ConcreteObserverA: Reacted to the event " + str(self.model.get_progress()))
@@ -29,32 +34,28 @@ class ViewController(qsf.Observer):
 		self.window = tk.Tk()
 		self.window.title("Query Seatfinder")
 
-		gui_pane = tk.Frame(self.window)
-		gui_pane.rowconfigure(0, weight=1)
-		gui_pane.columnconfigure(0, weight=1)
+		self.gui_pane = tk.Frame(self.window)
+		self.gui_pane.rowconfigure(0, weight=1)
+		self.gui_pane.columnconfigure(0, weight=1)
 
-		label = tk.Label(gui_pane, text = "Select a period of time", font = ('Segoe UI', 12))
-		label.grid(row = 0, columnspan = 2, padx = 10, pady = 10, sticky = 'w')
-		button_send_query = tk.Button(gui_pane, text = 'OK', command = self.button_pressed)
-		button_send_query.grid(row = 3, column = 0, columnspan = 2, padx = 10, pady = 10, sticky = 'we')
+		self.label = tk.Label(self.gui_pane, text = "Select a period of time", font = ('Segoe UI', 12))
+		self.button_send_query = tk.Button(self.gui_pane, text = 'OK', command = self.button_pressed)
 
-		self.dateentry_from = tkcalendar.DateEntry(gui_pane, width=12, background='darkblue', 
+		self.__interval_selection()
+
+		self.dateentry_from = tkcalendar.DateEntry(self.gui_pane, width=12, background='darkblue', 
 			foreground='white', borderwidth=2)
-		self.dateentry_to = tkcalendar.DateEntry(gui_pane, width=12, background='darkblue', 
+		self.dateentry_to = tkcalendar.DateEntry(self.gui_pane, width=12, background='darkblue', 
 			foreground='white', borderwidth=2)
 
-		self.timeentry_from = mw.TimeEntry(gui_pane)
-		self.timeentry_to = mw.TimeEntry(gui_pane)
+		self.timeentry_from = mw.TimeEntry(self.gui_pane)
+		self.timeentry_to = mw.TimeEntry(self.gui_pane)
 		
 		self.progressbar = ttk.Progressbar(self.window, mode = 'determinate')
 		self.progressbar["maximum"] = 100
 
-		self.dateentry_from.grid(row = 1, column = 0, padx = 10, pady = 10,sticky = 'w')
-		self.timeentry_from.grid(row = 1, column = 1, padx = 10, pady = 10,sticky = 'e')
-		self.dateentry_to.grid(row = 2, column = 0, padx = 10, pady = 10,sticky = 'w')
-		self.timeentry_to.grid(row = 2, column = 1, padx = 10, pady = 10,sticky = 'e')
-
-		gui_pane.pack(fill=tk.BOTH, expand=1)
+	
+		self.gui_pane.pack(fill=tk.BOTH, expand=1)
 		self.progressbar.pack(padx = 10, pady = 10, fill=tk.X, expand=1)
 
 		self.timeentry_from.set_time(datetime.now() - dt.timedelta(hours = 2))
@@ -62,10 +63,34 @@ class ViewController(qsf.Observer):
 
 		self.dateentry_from.set_date(self.dateentry_to.get_date() - dt.timedelta(days = 1))
 
-		for widget in gui_pane.winfo_children():
+		self.__layout()
+
+		for widget in self.gui_pane.winfo_children():
 			self.__change_font_size(widget, 12)
 
 		self.window.mainloop()
+
+	def __interval_selection(self):
+		self.resampling_intervals = {	'15 min'	: '15Min', 
+										'30 min'	: '30Min',
+										'1 hour' 	: '1H',
+										'2 hours'	: '2H',
+										'1 day'		: '1D',
+										'1 week'	: '1W'}
+		self.interval_selection = ttk.Combobox(self.gui_pane, 
+			values = list(self.resampling_intervals.keys()))
+		self.interval_selection.current(0)
+
+	def __layout(self):
+		self.label.grid(row = 0, columnspan = 2, padx = 10, pady = 10, sticky = 'w')
+		self.button_send_query.grid(row = 4, column = 0, columnspan = 2, padx = 10, pady = 10, sticky = 'we')
+		self.dateentry_from.grid(row = 1, column = 0, padx = 10, pady = 10,sticky = 'w')
+		self.timeentry_from.grid(row = 1, column = 1, padx = 10, pady = 10,sticky = 'e')
+		self.dateentry_to.grid(row = 2, column = 0, padx = 10, pady = 10,sticky = 'w')
+		self.timeentry_to.grid(row = 2, column = 1, padx = 10, pady = 10,sticky = 'e')
+
+		self.interval_selection.grid(row = 3, column = 0, columnspan = 2, padx = 10, pady = 10)
+
 
 	def button_pressed(self):
 
@@ -76,6 +101,7 @@ class ViewController(qsf.Observer):
 		# gather datetime input
 
 		time_period = self.__get_entered_time_period()
+		self.model.set_resampling_interval(self.resampling_intervals[self.interval_selection.get()])
 
 		print(time_period[0])
 		print(time_period[-1])

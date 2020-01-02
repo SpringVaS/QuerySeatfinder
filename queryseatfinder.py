@@ -115,6 +115,9 @@ class Model(Subject):
 
 		self.allLocationsOnCampus = [*(self.mainlib), *(self.slibs)]
 
+
+		self.resampling_interval = '15Min'
+
 		self.vtypes = {'location[]', 'sublocs'}
 
 		self.timeSeriesKeys = {'seatestimate' : 'occupied_seats', 'manualcount' : 'occupied_seats'}
@@ -161,7 +164,7 @@ class Model(Subject):
 
 			#rawdata = rawdata[rawdata.index >= timebegin]
 			rawdata = rawdata.truncate(after = timebegin)
-			location_data = rawdata.resample('15Min').mean()
+			location_data = rawdata.resample(self.resampling_interval).mean()
 			location_data = location_data.sort_index(ascending = False)
 			resampled[location_id] = location_data.round()
 			location_index += 1
@@ -178,6 +181,9 @@ class Model(Subject):
 			resampled.values())
 		combinedData = combinedData.sort_index(ascending = False)
 		return combinedData
+
+	def set_resampling_interval(self, value):
+		self.resampling_interval = value
 
 	def __get_info_for_location_from_server(self, location_id, kind, timebegin, timeend):
 		data = self.__query_server(kind, location_id, timebegin, timeend)
