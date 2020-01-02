@@ -162,12 +162,6 @@ class Model(Subject):
 			resampled[location_id] = location_data.round()
 			location_index += 1
 
-			# dataframe output for aggregation description
-			rawdata_output = rawdata.sort_index(ascending = False)
-			location_data_output = location_data.sort_index(ascending = False)
-			self.write_to_excel(rawdata_output, 'raw ' + str(location_id))
-			self.write_to_excel(location_data_output, 'resampled ' + str(location_id))
-
 
 		self.__update_progress(100)
 
