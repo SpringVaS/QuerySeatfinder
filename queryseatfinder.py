@@ -157,7 +157,7 @@ class Model(Subject):
 					((oldestTime - time_progress) / (timeend - timebegin)) * (100 / (total_locations)))
 				oldestTime = newOldestTime
 
-			rawdata = rawdata[rawdata.index >= timebegin]
+			rawdata = rawdata.truncate(before = timebegin)
 			location_data = rawdata.resample('15Min', closed = 'right', label ='left').mean()
 			resampled[location_id] = location_data.round()
 			location_index += 1
@@ -207,7 +207,8 @@ class Model(Subject):
 				data = json.load(datafile)
 
 
-		callbacks = {'timestamp' : self.__parse_timestamps, 'opening_hours' : self.__parse_openinghours}
+		callbacks = {	'timestamp' 	: self.__parse_timestamps, 
+						'opening_hours' : self.__parse_openinghours}
 
 		staticlibdata = {}
 		for location in data:
