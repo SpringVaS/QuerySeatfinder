@@ -102,7 +102,7 @@ class Model(Subject):
 						'LST',      # Technik
 						'LSN',      # Naturwissenschaften
 						'LSW',      # Wiwi und Informatik
-						'LBS'}         # Lehrbuchsammlung
+						'LBS'}      # Lehrbuchsammlung
 						#'BIB-N'}   # KIT-Bibliothek Nord. Am Campus Nord
 		# Specific Libraires
 		self.slibs =   {'FBC',      # Chemie
