@@ -18,8 +18,12 @@ class TimeEntry(tk.Frame):
         self.min.grid(row=0,column=1)
 
     def trace_var(self,*args):
-        if self.last_value == "59" and self.minstr.get() == "0":
-            self.hourstr.set(int(self.hourstr.get())+1 if self.hourstr.get() !="23" else 0)
+        if self.last_value == "59" and self.minstr.get() == "00":
+            self.hourstr.set((int(self.hourstr.get())+1) if self.hourstr.get() !="23" else 0)
+            self.hour.config(format="%02.0f")
+        elif self.last_value == "00" and self.minstr.get() == "59":
+            self.hourstr.set((int(self.hourstr.get())-1) if self.hourstr.get() !="00" else 23)
+            self.hour.config(format="%02.0f")
         self.last_value = self.minstr.get()
 
     def set_time(self, pTime):

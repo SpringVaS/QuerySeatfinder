@@ -157,7 +157,7 @@ class Model(Subject):
 					((oldestTime - time_progress) / (timeend - timebegin)) * (100 / (total_locations)))
 				oldestTime = newOldestTime
 
-			rawdata = rawdata.truncate(before = timebegin)
+			rawdata = rawdata[rawdata.index >= timebegin]
 			location_data = rawdata.resample('15Min').mean()
 			resampled[location_id] = location_data.round()
 			location_index += 1
