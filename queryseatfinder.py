@@ -163,8 +163,9 @@ class Model(Subject):
 
 			#rawdata = rawdata[rawdata.index >= timebegin]
 			rawdata = rawdata.truncate(after = timebegin)
-			location_data = rawdata.resample(self.resampling_interval).mean()
-			location_data = location_data.sort_index(ascending = False)
+
+			location_data = self.__resample(rawdata)
+			
 			resampled[location_id] = location_data.round()
 			location_index += 1
 
@@ -180,6 +181,24 @@ class Model(Subject):
 			resampled.values())
 		combinedData = combinedData.sort_index(ascending = False)
 		return combinedData
+
+	def __resample(self, data):
+		""" Without additional parameters, the pandas datframe resample function
+			aggregates the values between the two labels. To simulate a moving average
+			the actual label ticks are moved half the resampling interval.
+			The label names are also offset half the resampling interval.
+		"""
+		timedelta = pd.Timedelta(self.resampling_interval)
+		interval_seconds = str(timedelta.seconds) + 'S'
+		offset_delta = pd.Timedelta(0)
+		print(timedelta.seconds)
+		if (timedelta < pd.Timedelta('1D')):
+			offset_delta = timedelta / 2
+			print(interval_seconds)
+
+		location_data = data.resample(interval_seconds, base=offset_delta.seconds, loffset=offset_delta).mean()
+		location_data = location_data.sort_index(ascending = False)
+		return location_data
 
 	def set_resampling_interval(self, value):
 		self.resampling_interval = value
