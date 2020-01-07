@@ -196,15 +196,21 @@ class Model(Subject):
 			offset_delta = timedelta / 2
 			print(interval_seconds)
 
-		#location_data = data.resample(interval_seconds, base=offset_delta.seconds, loffset=offset_delta).mean()
 		"""
 		Apply custom aggregarion function. Use functools to include parameter.
 		"""
 		resampler = data.resample(interval_seconds, base=offset_delta.seconds, loffset=offset_delta)
-		print(resampler.indices)
+		print(resampler)
+
+		#location_data = resampler.mean()
+		#location_data = resampler.aggregate(myutils.gaussian_weighted_mean, exp_decay=4)
+		sigma = myutils.calculate_derivation(offset_delta.seconds, 0.2)
+		location_data = myutils.resample_gaussian(resampler, sigma, offset_delta)
 
 		location_data = location_data.sort_index(ascending = False)
 		return location_data
+
+
 
 	def set_resampling_interval(self, value):
 		self.resampling_interval = value
