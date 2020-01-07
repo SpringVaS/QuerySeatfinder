@@ -4,7 +4,7 @@ from typing import List
 
 import requests
 import json
-import functools
+from functools import partial, reduce
 
 from warnings import warn
 
@@ -176,7 +176,7 @@ class Model(Subject):
 
 		self.__update_progress(100)
 
-		combinedData = functools.reduce(lambda left,right: 
+		combinedData = reduce(lambda left,right: 
 			pd.merge(left,right,on='timestamp', how = 'outer').fillna(0), 
 			resampled.values())
 		combinedData = combinedData.sort_index(ascending = False)
@@ -196,7 +196,13 @@ class Model(Subject):
 			offset_delta = timedelta / 2
 			print(interval_seconds)
 
-		location_data = data.resample(interval_seconds, base=offset_delta.seconds, loffset=offset_delta).mean()
+		#location_data = data.resample(interval_seconds, base=offset_delta.seconds, loffset=offset_delta).mean()
+		"""
+		Apply custom aggregarion function. Use functools to include parameter.
+		"""
+		resampler = data.resample(interval_seconds, base=offset_delta.seconds, loffset=offset_delta)
+		print(resampler.indices)
+
 		location_data = location_data.sort_index(ascending = False)
 		return location_data
 
