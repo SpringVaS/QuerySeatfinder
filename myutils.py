@@ -17,11 +17,15 @@ def calculate_derivation(max_dist, min_weight):
 	return (max_dist / (np.sqrt(- 2 * np.log(min_weight))))
 
 def resample_gaussian(resampler, sigma, loffset):
-	resampled_dataframe = pd.DataFrame()
+	#resampled_dataframe = pd.DataFrame()
+	labels = []
+	reps = []
 	for group in resampler:
 		label_time = group[0] + loffset
+		labels.append(label_time)
 		values = group[1]
 		weights = np.zeros(len(values))
+		#print(values.values)
 		for i in range(len(values)):
 			distance = np.abs(values.index[i] - label_time)
 			#print(values.index[i])
@@ -30,8 +34,15 @@ def resample_gaussian(resampler, sigma, loffset):
 		normalization_factor = 1 / np.sum(weights)
 		weights = normalization_factor * weights
 
-		#group_rep = np.multiply(weights, values)
+		group_rep = 0
+		for i in range(len(weights)):
+			group_rep += weights[i] * values.values[i][0]
+		reps.append(group_rep)
+	
+	loc_id = (next(iter(values.iloc[0].keys())))
 
-		resampled_dataframe.append
-
+	value_dict = {'timestamp' : labels, loc_id : reps}
+	resampled_dataframe = pd.DataFrame(value_dict)
+	#resampled_dataframe = pd.DataFrame()
+	resampled_dataframe = resampled_dataframe.set_index(['timestamp'])
 	return resampled_dataframe
