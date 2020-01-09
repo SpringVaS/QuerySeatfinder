@@ -16,10 +16,11 @@ def gaussian_weighted_mean(array_like, exp_decay):
 def calculate_derivation(max_dist, min_weight):
 	return (max_dist / (np.sqrt(- 2 * np.log(min_weight))))
 
-def resample_gaussian(resampler, sigma, loffset):
+def resample_gaussian(resampler, sigma):
 	#resampled_dataframe = pd.DataFrame()
 	labels = []
 	reps = []
+	loffset = resampler.loffset
 	for group in resampler:
 		label_time = group[0] + loffset
 		labels.append(label_time)
@@ -28,17 +29,19 @@ def resample_gaussian(resampler, sigma, loffset):
 		#print(values.values)
 		for i in range(len(values)):
 			distance = np.abs(values.index[i] - label_time)
-			#print(values.index[i])
 			d = distance.seconds
-			weights[i] = np.exp(- 0.5 * np.power((d / sigma), 2))
+			weights[i] = np.exp((-1 * d * d) / (2 * sigma * sigma))
 		normalization_factor = 1 / np.sum(weights)
 		weights = normalization_factor * weights
-
+		print(weights)
 		group_rep = 0
 		for i in range(len(weights)):
 			group_rep += weights[i] * values.values[i][0]
 		reps.append(group_rep)
 	
+	""" location_id is to be found in group like this
+		the first key of the first line of the secend element of the passed touple
+	"""
 	loc_id = (next(iter(values.iloc[0].keys())))
 
 	value_dict = {'timestamp' : labels, loc_id : reps}
@@ -46,3 +49,4 @@ def resample_gaussian(resampler, sigma, loffset):
 	#resampled_dataframe = pd.DataFrame()
 	resampled_dataframe = resampled_dataframe.set_index(['timestamp'])
 	return resampled_dataframe
+
