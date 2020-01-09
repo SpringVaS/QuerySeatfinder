@@ -121,6 +121,9 @@ class Model(Subject):
 
 		self.timeSeriesKeys = {'seatestimate' : 'occupied_seats', 'manualcount' : 'occupied_seats'}
 
+		self.sampling_methods = ['mean', 'Gauss']
+		self.selected_sampling_method = 'mean'
+
 		self.libMetadata = self.__get_static_lib_data()
 		self.query_progress = 0
 
@@ -166,6 +169,8 @@ class Model(Subject):
 
 			location_data = self.__resample(rawdata)
 			
+			#location_data = rawdata.resample(self.resampling_interval).mean()
+
 			resampled[location_id] = location_data.round()
 			location_index += 1
 
@@ -199,12 +204,22 @@ class Model(Subject):
 		"""
 		Apply custom aggregarion function. Use functools to include parameter.
 		"""
-		resampler = data.resample(interval_seconds, base=offset_delta.seconds, loffset=offset_delta)
-		print(resampler)
+		if (offset_delta.seconds == 0):
+			resampler = data.resample(self.resampling_interval)
+		else:
+			print(offset_delta)
+			resampler = data.resample(interval_seconds, base=offset_delta.seconds, loffset=offset_delta)
 
-		#location_data = resampler.mean()
-		sigma = myutils.calculate_derivation(offset_delta.seconds, 0.2)
-		location_data = myutils.resample_gaussian(resampler, sigma)
+		
+		#resampler = data.resample(self.resampling_interval)
+
+		location_data = pd.DataFrame()
+
+		if (timedelta >= pd.Timedelta('1D') or self.selected_sampling_method == 'mean'):
+			location_data = resampler.mean()
+		elif (self.selected_sampling_method == 'Gauss'):
+			sigma = myutils.calculate_derivation(offset_delta.seconds, 0.2)
+			location_data = myutils.resample_gaussian(resampler, sigma)
 
 		location_data = location_data.sort_index(ascending = False)
 		return location_data
