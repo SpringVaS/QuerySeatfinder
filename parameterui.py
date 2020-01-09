@@ -38,10 +38,14 @@ class ViewController(qsf.Observer):
 		self.gui_pane.rowconfigure(0, weight=1)
 		self.gui_pane.columnconfigure(0, weight=1)
 
-		self.label = tk.Label(self.gui_pane, text = "Select a period of time", font = ('Segoe UI', 12))
+		self.label = tk.Label(self.window, text = "Select a period of time for the query", font = ('Segoe UI', 12))
+		self.label.pack(padx = 10, pady = 10, side = tk.TOP, anchor= tk.W)
 		self.button_send_query = tk.Button(self.gui_pane, text = 'OK', command = self.button_pressed)
 
 		self.__interval_selection()
+
+		self.label_from	= tk.Label(self.gui_pane, text = "from:")
+		self.label_to	= tk.Label(self.gui_pane, text = "to:")
 
 		self.dateentry_from = tkcalendar.DateEntry(self.gui_pane, width=12, background='darkblue', 
 			foreground='white', borderwidth=2)
@@ -55,8 +59,8 @@ class ViewController(qsf.Observer):
 		self.progressbar["maximum"] = 100
 
 	
-		self.gui_pane.pack(fill=tk.BOTH, expand=1)
-		self.progressbar.pack(padx = 10, pady = 10, fill=tk.X, expand=1)
+		self.gui_pane.pack(fill=tk.X, expand=0)
+		self.progressbar.pack(padx = 10, pady = 10, side = tk.BOTTOM, fill=tk.X, expand=0)
 
 		self.timeentry_from.set_time(datetime.now() - dt.timedelta(hours = 2))
 		self.timeentry_to.set_time(datetime.now())
@@ -77,19 +81,25 @@ class ViewController(qsf.Observer):
 										'2 hours'	: '2H',
 										'1 day'		: '1D',
 										'1 week'	: '1W'}
+		self.label_interval = tk.Label(self.gui_pane, text='sampling interval:')
 		self.interval_selection = ttk.Combobox(self.gui_pane, 
 			values = list(self.resampling_intervals.keys()))
 		self.interval_selection.current(0)
 
 	def __layout(self):
-		self.label.grid(row = 0, columnspan = 2, padx = 10, pady = 10, sticky = 'w')
-		self.button_send_query.grid(row = 4, column = 0, columnspan = 2, padx = 10, pady = 10, sticky = 'we')
-		self.dateentry_from.grid(row = 1, column = 0, padx = 10, pady = 10,sticky = 'w')
-		self.timeentry_from.grid(row = 1, column = 1, padx = 10, pady = 10,sticky = 'e')
-		self.dateentry_to.grid(row = 2, column = 0, padx = 10, pady = 10,sticky = 'w')
-		self.timeentry_to.grid(row = 2, column = 1, padx = 10, pady = 10,sticky = 'e')
+		#self.label.grid(row = 0, columnspan = 2, padx = 10, pady = 10, sticky = 'w')
+		self.button_send_query.grid(row = 4, column = 1, columnspan = 2, padx = 10, pady = 10, sticky = 'we')
+		self.label_from.grid(row = 1, column = 0, padx = 10, pady = 10,sticky = 'w')
+		self.dateentry_from.grid(row = 1, column = 1, padx = 10, pady = 10,sticky = 'w')
+		self.timeentry_from.grid(row = 1, column = 2, padx = 10, pady = 10,sticky = 'e')
+		self.label_to.grid(row = 2, column = 0, padx = 10, pady = 10,sticky = 'w')
+		self.dateentry_to.grid(row = 2, column = 1, padx = 10, pady = 10,sticky = 'w')
+		self.timeentry_to.grid(row = 2, column = 2, padx = 10, pady = 10,sticky = 'e')
 
-		self.interval_selection.grid(row = 3, column = 0, columnspan = 2, padx = 10, pady = 10)
+		self.label_interval.grid(row = 3, column = 0, padx = 10, pady = 10, sticky = 'w')
+		self.interval_selection.grid(row = 3, column = 1, columnspan = 2, padx = 10, pady = 10, sticky = 'we')
+
+		self.window.resizable(False, False)
 
 
 	def button_pressed(self):

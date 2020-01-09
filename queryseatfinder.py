@@ -170,8 +170,8 @@ class Model(Subject):
 			location_index += 1
 
 			# dataframe output for aggregation description
-			self.write_to_excel(rawdata, 'raw ' + str(location_id))
-			self.write_to_excel(location_data, 'resampled ' + str(location_id))
+			#self.write_to_excel(rawdata, 'raw ' + str(location_id))
+			#self.write_to_excel(location_data, 'resampled ' + str(location_id))
 
 
 		self.__update_progress(100)
