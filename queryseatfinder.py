@@ -137,6 +137,13 @@ class Model(Subject):
 	def __del__(self):
 		pass
 
+	def get_sampling_method_options(self):
+		return self.sampling_methods
+
+	def set_sampling_method(self, value):
+		self.selected_sampling_method = value
+
+
 	def get_info(self, kind, timebegin, timeend):
 		resampled = {}
 		location_index = 0
@@ -277,7 +284,7 @@ class Model(Subject):
 	def get_progress(self):
 		return self.query_progress
 
-	def write_to_excel(self, dataframe, sheet_name, autoFormat = False):
+	def write_to_excel(self, dataframe, sheet_name, auto_format = False):
 		excel_workbook = load_workbook(self.dstpath)
 		writer = pd.ExcelWriter(self.dstpath, engine = 'openpyxl')
 		writer.book = excel_workbook
@@ -286,7 +293,7 @@ class Model(Subject):
 		sheet.column_dimensions['A'].width = 30
 		writer.save()
 		writer.close()
-		if autoFormat:
+		if auto_format:
 			self.__sheet_autoformat(sheet_name)
 
 	def __sheet_autoformat(self, sheet_name):

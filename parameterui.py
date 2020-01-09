@@ -38,7 +38,7 @@ class ViewController(qsf.Observer):
 		self.gui_pane.rowconfigure(0, weight=1)
 		self.gui_pane.columnconfigure(0, weight=1)
 
-		self.label = tk.Label(self.window, text = "Select a period of time for the query", font = ('Segoe UI', 12))
+		self.label = tk.Label(self.window, text = "Select a period of time for the query")
 		self.label.pack(padx = 10, pady = 10, side = tk.TOP, anchor= tk.W)
 		self.button_send_query = tk.Button(self.gui_pane, text = 'OK', command = self.button_pressed)
 
@@ -58,9 +58,11 @@ class ViewController(qsf.Observer):
 		self.progressbar = ttk.Progressbar(self.window, mode = 'determinate')
 		self.progressbar["maximum"] = 100
 
-	
+		self.__mean_option_selection()
+
 		self.gui_pane.pack(fill=tk.X, expand=0)
 		self.progressbar.pack(padx = 10, pady = 10, side = tk.BOTTOM, fill=tk.X, expand=0)
+
 
 		self.timeentry_from.set_time(datetime.now() - dt.timedelta(hours = 2))
 		self.timeentry_to.set_time(datetime.now())
@@ -71,6 +73,7 @@ class ViewController(qsf.Observer):
 
 		for widget in self.gui_pane.winfo_children():
 			self.__change_font_size(widget, 12)
+		self.__change_font_size(self.label, 12)
 
 		self.window.mainloop()
 
@@ -84,11 +87,37 @@ class ViewController(qsf.Observer):
 		self.label_interval = tk.Label(self.gui_pane, text='sampling interval:')
 		self.interval_selection = ttk.Combobox(self.gui_pane, 
 			values = list(self.resampling_intervals.keys()))
+		self.interval_selection.bind("<<ComboboxSelected>>", self.interval_selected)
 		self.interval_selection.current(0)
+
+	def interval_selected(self, event):
+		print(event)
+		print(self.interval_selection.get())
+		if (pd.Timedelta(self.interval_selection.get()) > pd.Timedelta('2H')):
+			self.opt_btns[0].select()
+			self.opt_btns[1].config(state=tk.DISABLED)
+		else:
+			self.opt_btns[1].config(state=tk.NORMAL)
+
+
+	def __mean_option_selection(self):
+		options = self.model.get_sampling_method_options()
+		self.selected_option = tk.StringVar()
+		self.selected_option.set(value ='mean')
+		self.mean_option_label = tk.Label(self.gui_pane, text='aggregation method:')
+		self.opt_btns = []
+		col = 1
+		for o in options:
+			bt = tk.Radiobutton(self.gui_pane, text = o, variable = self.selected_option, 
+				value = o)
+			bt.grid(row=4, column=col,padx = 10, pady = 10,sticky = 'w')
+			self.__change_font_size(bt, 12)
+			self.opt_btns.append(bt)
+			col +=1
 
 	def __layout(self):
 		#self.label.grid(row = 0, columnspan = 2, padx = 10, pady = 10, sticky = 'w')
-		self.button_send_query.grid(row = 4, column = 1, columnspan = 2, padx = 10, pady = 10, sticky = 'we')
+		self.button_send_query.grid(row = 5, column = 1, columnspan = 2, padx = 10, pady = 10, sticky = 'we')
 		self.label_from.grid(row = 1, column = 0, padx = 10, pady = 10,sticky = 'w')
 		self.dateentry_from.grid(row = 1, column = 1, padx = 10, pady = 10,sticky = 'w')
 		self.timeentry_from.grid(row = 1, column = 2, padx = 10, pady = 10,sticky = 'e')
@@ -98,6 +127,7 @@ class ViewController(qsf.Observer):
 
 		self.label_interval.grid(row = 3, column = 0, padx = 10, pady = 10, sticky = 'w')
 		self.interval_selection.grid(row = 3, column = 1, columnspan = 2, padx = 10, pady = 10, sticky = 'we')
+		self.mean_option_label.grid(row = 4, column = 0, padx = 10, pady = 10, sticky = 'w')
 
 		self.window.resizable(False, False)
 
@@ -112,6 +142,7 @@ class ViewController(qsf.Observer):
 
 		time_period = self.__get_entered_time_period()
 		self.model.set_resampling_interval(self.resampling_intervals[self.interval_selection.get()])
+		self.model.set_sampling_method(self.selected_option.get())
 
 		print(time_period[0])
 		print(time_period[-1])
