@@ -102,7 +102,7 @@ class Model(Subject):
 						'LSW',      # Wiwi und Informatik
 						'LBS'}      # Lehrbuchsammlung
 						#'BIB-N'}   # KIT-Bibliothek Nord. Am Campus Nord
-		# Specific Libraires
+		# Specific Libraries
 		self.slibs =   {'FBC',      # Chemie
 						'FBP',      # Physik
 						'LAF',      # Lernzentrum am Fasanenschloesschen}
@@ -130,7 +130,7 @@ class Model(Subject):
 		workbook = Workbook()
 		workbook.save(dstpath)
 
-		self.write_to_excel(self.libMetadata, "Libraires", True)
+		self.write_to_excel(self.libMetadata, "Libraries", True)
 		self.__delete_standard_sheet()
 
 	def __del__(self):
