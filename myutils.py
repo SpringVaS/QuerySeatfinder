@@ -26,14 +26,12 @@ def resample_gaussian(resampler, sigma):
 		labels.append(label_time)
 		values = group[1]
 		weights = np.zeros(len(values))
-		#print(values.values)
 		for i in range(len(values)):
 			distance = np.abs(values.index[i] - label_time)
 			d = distance.seconds
 			weights[i] = np.exp((-1 * d * d) / (2 * sigma * sigma))
 		normalization_factor = 1 / np.sum(weights)
 		weights = normalization_factor * weights
-		print(weights)
 		group_rep = 0
 		for i in range(len(weights)):
 			group_rep += weights[i] * values.values[i][0]

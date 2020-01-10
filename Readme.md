@@ -11,9 +11,12 @@ All requirements can be installed through pip. Run
 pip install -r requirements.txt
 ```
 
-
 The script runs in python version 3, the newest stable release is recommended.
 It is also useful to set up a virtual environment, so that you do not clutter your productive system with the requiered dependencies.
+
+## Run
+
+After setting up python 3 and installing the dependencies the tool can be launched with by running the `querseatfinder.py` file in python 3.
 
 ## Features
 

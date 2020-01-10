@@ -1,4 +1,4 @@
-import queryseatfinder as qsf
+import serverquerymodel as sqm
 
 import tkinter as tk
 from tkinter import ttk
@@ -13,7 +13,7 @@ import tkinter.font as tkFont
 import pandas as pd
 import numpy as np
 
-class ViewController(qsf.Observer):
+class ViewController(sqm.Observer):
 	
 	def __init__(self, model):
 		self.model = model
@@ -25,8 +25,7 @@ class ViewController(qsf.Observer):
 		# unsubscribe from model updates
 		self.model.detach(self)
 
-	def update(self, subject: qsf.Subject) -> None:
-		print("ConcreteObserverA: Reacted to the event " + str(self.model.get_progress()))
+	def update(self, subject: sqm.Subject) -> None:
 		self.progressbar["value"] = self.model.get_progress()
 		self.progressbar.update()
 
@@ -91,9 +90,7 @@ class ViewController(qsf.Observer):
 		self.interval_selection.current(0)
 
 	def interval_selected(self, event):
-		print(event)
-		print(self.interval_selection.get())
-		if (pd.Timedelta(self.interval_selection.get()) > pd.Timedelta('2H')):
+		if (pd.Timedelta(self.resampling_intervals[self.interval_selection.get()]) > pd.Timedelta('2H')):
 			self.opt_btns[0].select()
 			self.opt_btns[1].config(state=tk.DISABLED)
 		else:
@@ -166,8 +163,3 @@ class ViewController(qsf.Observer):
 		size = new_font.actual()["size"]
 		new_font.configure(size=font_size)
 		tk_elem.configure(font=new_font)
-
-
-if __name__ == "__main__":
-	m = qsf.Model(qsf.URL, 'data.xlsx')
-	c = ViewController(m)
