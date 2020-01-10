@@ -148,7 +148,7 @@ class Model(Subject):
 		location_index = 0
 		total_locations = len(self.allLocationsOnCampus)
 		for location_id in self.allLocationsOnCampus:
-			self.__update_progress((location_index / total_locations) * 90)
+			self.__update_progress((location_index / total_locations) * 95)
 			oldestTime = timeend
 			rawdata = pd.DataFrame()
 			while oldestTime > timebegin:
@@ -167,7 +167,7 @@ class Model(Subject):
 
 				time_progress = newOldestTime if newOldestTime > timebegin else timebegin
 				self.__update_progress(self.get_progress() + 
-					((oldestTime - time_progress) / (timeend - timebegin)) * (90 / (total_locations)))
+					((oldestTime - time_progress) / (timeend - timebegin)) * (95 / (total_locations)))
 				oldestTime = newOldestTime
 
 			#rawdata = rawdata[rawdata.index >= timebegin]
@@ -180,7 +180,7 @@ class Model(Subject):
 			resampled[location_id] = location_data.round()
 			location_index += 1
 
-		self.__update_progress(90)
+		self.__update_progress(95)
 
 		combinedData = reduce(lambda left,right: 
 			pd.merge(left,right,on='timestamp', how = 'outer').fillna(0), 
@@ -192,11 +192,12 @@ class Model(Subject):
 		occupancy = self.get_info('seatestimate', timebegin, timeend)
 		self.__write_to_excel(occupancy, "Seat Occupancy")
 		self.__compute_pressure(occupancy)
+		self.__update_progress(100)
 
 	def __compute_pressure(self, data):
 		mainlib_capacity = self.libMetadata[self.mainlib].loc['available_seats'].sum()
-		mainlib_data = data[self.mainlib].sum(axis = 1) / mainlib_capacity
-		print(mainlib_data)
+		mainlib_pressure = data[self.mainlib].sum(axis = 1) / mainlib_capacity
+		self.__write_to_excel(mainlib_pressure, "Pressure in Main Library")
 		
 
 
