@@ -100,7 +100,7 @@ class ViewController(sqm.Observer):
 	def __mean_option_selection(self):
 		options = self.model.get_sampling_method_options()
 		self.selected_option = tk.StringVar()
-		self.selected_option.set(value ='mean')
+		self.selected_option.set(value =options[0])
 		self.mean_option_label = tk.Label(self.gui_pane, text='aggregation method:')
 		self.opt_btns = []
 		col = 1

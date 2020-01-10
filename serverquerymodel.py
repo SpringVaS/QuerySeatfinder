@@ -223,7 +223,7 @@ class Model(Subject):
 
 		location_data = pd.DataFrame()
 
-		if (timedelta >= pd.Timedelta('1D') or self.selected_sampling_method == 'mean'):
+		if (timedelta >= pd.Timedelta('1D') or self.selected_sampling_method == 'Mean'):
 			location_data = resampler.mean()
 		elif (self.selected_sampling_method == 'Gauss'):
 			sigma = myutils.calculate_derivation(offset_delta.seconds, 0.2)
