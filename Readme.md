@@ -12,7 +12,7 @@ pip install -r requirements.txt
 ```
 
 The script runs in python version 3, the newest stable release is recommended.
-It is also useful to set up a virtual environment, so that you do not clutter your productive system with the requiered dependencies.
+We recommend setting up a virtual environment using `venv`, so that you do not clutter your productive system with the requiered dependencies.
 
 ## Run
 
@@ -20,9 +20,9 @@ After setting up python 3 and installing the dependencies the tool can be launch
 
 ## Features
 
-The database offers a value every 5 minutes. You can choose a down sampling interval. Furthermore the aggregation method when downsampling method can be specified. Implemented options are arithmetic mean and gaussian weighted around the sampling time. The derivation for the gaussian method is chosen such that the value at the furthest time in the interval would have a share of 20 percent
+The database offers a value every 5 minutes. You can choose a down sampling interval. Furthermore the aggregation method when downsampling method can be specified. Implemented options are arithmetic mean and gaussian weighted around the sampling time. The derivation for the gaussian method is chosen such that the value at the furthest time in the interval would have a share of 20 percent.
 
 
 ## Output
 
-The tool outputs the estimated seat occupation of all libraries on campus into an excel file named 'data.xls'
+The tool outputs the estimated seat occupation of all libraries on campus into an excel file named 'data.xls'.
