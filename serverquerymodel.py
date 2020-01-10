@@ -121,7 +121,7 @@ class Model(Subject):
 		self.timeSeriesKeys = {'seatestimate' : 'occupied_seats', 'manualcount' : 'occupied_seats'}
 
 		self.sampling_methods = ['Mean', 'Gauss']
-		self.selected_sampling_method = 'mean'
+		self.selected_sampling_method = 'Mean'
 
 		self.libMetadata = self.__get_static_lib_data()
 		self.query_progress = 0
@@ -130,7 +130,7 @@ class Model(Subject):
 		workbook = Workbook()
 		workbook.save(dstpath)
 
-		self.write_to_excel(self.libMetadata, "Libraires", True)
+		self.__write_to_excel(self.libMetadata, "Libraires", True)
 		self.__delete_standard_sheet()
 
 	def __del__(self):
@@ -148,7 +148,7 @@ class Model(Subject):
 		location_index = 0
 		total_locations = len(self.allLocationsOnCampus)
 		for location_id in self.allLocationsOnCampus:
-			self.__update_progress((location_index / total_locations) * 100)
+			self.__update_progress((location_index / total_locations) * 90)
 			oldestTime = timeend
 			rawdata = pd.DataFrame()
 			while oldestTime > timebegin:
@@ -167,7 +167,7 @@ class Model(Subject):
 
 				time_progress = newOldestTime if newOldestTime > timebegin else timebegin
 				self.__update_progress(self.get_progress() + 
-					((oldestTime - time_progress) / (timeend - timebegin)) * (100 / (total_locations)))
+					((oldestTime - time_progress) / (timeend - timebegin)) * (90 / (total_locations)))
 				oldestTime = newOldestTime
 
 			#rawdata = rawdata[rawdata.index >= timebegin]
@@ -180,18 +180,25 @@ class Model(Subject):
 			resampled[location_id] = location_data.round()
 			location_index += 1
 
-			# dataframe output for aggregation description
-			#self.write_to_excel(rawdata, 'raw ' + str(location_id))
-			#self.write_to_excel(location_data, 'resampled ' + str(location_id))
-
-
-		self.__update_progress(100)
+		self.__update_progress(90)
 
 		combinedData = reduce(lambda left,right: 
 			pd.merge(left,right,on='timestamp', how = 'outer').fillna(0), 
 			resampled.values())
 		combinedData = combinedData.sort_index(ascending = False)
 		return combinedData
+
+	def seat_estimate_and_pressure_to_excel(self, timebegin, timeend):
+		occupancy = self.get_info('seatestimate', timebegin, timeend)
+		self.__write_to_excel(occupancy, "Seat Occupancy")
+		self.__compute_pressure(occupancy)
+
+	def __compute_pressure(self, data):
+		mainlib_capacity = self.libMetadata[self.mainlib].loc['available_seats'].sum()
+		mainlib_data = data[self.mainlib].sum(axis = 1) / mainlib_capacity
+		print(mainlib_data)
+		
+
 
 	def __resample(self, data):
 		""" Without additional parameters, the pandas datframe resample function
@@ -223,7 +230,7 @@ class Model(Subject):
 
 		location_data = pd.DataFrame()
 
-		if (timedelta >= pd.Timedelta('1D') or self.selected_sampling_method == 'mean'):
+		if (timedelta >= pd.Timedelta('1D') or self.selected_sampling_method == 'Mean'):
 			location_data = resampler.mean()
 		elif (self.selected_sampling_method == 'Gauss'):
 			sigma = myutils.calculate_derivation(offset_delta.seconds, 0.2)
@@ -285,7 +292,8 @@ class Model(Subject):
 	def get_progress(self):
 		return self.query_progress
 
-	def write_to_excel(self, dataframe, sheet_name, auto_format = False):
+
+	def __write_to_excel(self, dataframe, sheet_name, auto_format = False):
 		excel_workbook = load_workbook(self.dstpath)
 		writer = pd.ExcelWriter(self.dstpath, engine = 'openpyxl')
 		writer.book = excel_workbook
@@ -376,3 +384,4 @@ class Model(Subject):
 	def __defineWeekdayNames(self):
 		mon = datetime.datetime.strptime("2013-05-13 09:00:00.000000", "%Y-%m-%d %H:%M:%S.%f")
 		print((mon + 1).strftime("%A"))
+

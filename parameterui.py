@@ -100,7 +100,7 @@ class ViewController(sqm.Observer):
 	def __mean_option_selection(self):
 		options = self.model.get_sampling_method_options()
 		self.selected_option = tk.StringVar()
-		self.selected_option.set(value ='mean')
+		self.selected_option.set(value =options[0])
 		self.mean_option_label = tk.Label(self.gui_pane, text='aggregation method:')
 		self.opt_btns = []
 		col = 1
@@ -144,8 +144,7 @@ class ViewController(sqm.Observer):
 		print(time_period[0])
 		print(time_period[-1])
 
-		occupancy = self.model.get_info('seatestimate',time_period[0], time_period[-1])
-		self.model.write_to_excel(occupancy, "Seat Occupancy")
+		self.model.seat_estimate_and_pressure_to_excel(time_period[0], time_period[-1])
 
 	def __get_entered_time_period(self):
 		date_entered_from 	= self.dateentry_from.get_date()
