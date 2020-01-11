@@ -130,7 +130,7 @@ class Model(Subject):
 		workbook = Workbook()
 		workbook.save(dstpath)
 
-		self.__write_to_excel(self.libMetadata, "Libraires", True)
+		self.__write_to_excel(self.libMetadata, "Libraries", True)
 		self.__delete_standard_sheet()
 
 	def __del__(self):
@@ -190,16 +190,22 @@ class Model(Subject):
 
 	def seat_estimate_and_pressure_to_excel(self, timebegin, timeend):
 		occupancy = self.get_info('seatestimate', timebegin, timeend)
+		mainlib_pressure = self.__compute_pressure(occupancy)
 		self.__write_to_excel(occupancy, "Seat Occupancy")
-		self.__compute_pressure(occupancy)
+		self.__write_to_excel(mainlib_pressure, "Pressure in Main Library")
 		self.__update_progress(100)
 
 	def __compute_pressure(self, data):
 		mainlib_capacity = self.libMetadata[self.mainlib].loc['available_seats'].sum()
 		mainlib_pressure = data[self.mainlib].sum(axis = 1) / mainlib_capacity
-		self.__write_to_excel(mainlib_pressure, "Pressure in Main Library")
-		
+		mainlib_pressure.name = "KIT-BIB"
 
+		speclib_capacities = self.libMetadata[self.slibs].loc['available_seats']
+		speclib_pressure = data[self.slibs] / speclib_capacities
+		print(speclib_pressure)
+		pressure = pd.merge(mainlib_pressure, speclib_pressure, on='timestamp')
+
+		return pressure
 
 	def __resample(self, data):
 		""" Without additional parameters, the pandas datframe resample function
