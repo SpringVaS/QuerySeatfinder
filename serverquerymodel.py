@@ -121,7 +121,7 @@ class Model(Subject):
 		self.timeSeriesKeys = {'seatestimate' : 'occupied_seats', 'manualcount' : 'occupied_seats'}
 
 		self.sampling_methods = ['Mean', 'Gauss']
-		self.selected_sampling_method = 'mean'
+		self.selected_sampling_method = 'Mean'
 
 		self.libMetadata = self.__get_static_lib_data()
 		self.query_progress = 0
