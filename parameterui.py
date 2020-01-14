@@ -10,8 +10,7 @@ from datetime import datetime
 
 import tkinter.font as tkFont
 
-import pandas as pd
-import numpy as np
+from pandas import Timedelta, Timestamp
 
 class ViewController(dm.Observer):
 	
@@ -90,7 +89,7 @@ class ViewController(dm.Observer):
 		self.interval_selection.current(0)
 
 	def interval_selected(self, event):
-		if (pd.Timedelta(self.resampling_intervals[self.interval_selection.get()]) > pd.Timedelta('2H')):
+		if (Timedelta(self.resampling_intervals[self.interval_selection.get()]) > Timedelta('2H')):
 			self.opt_btns[0].select()
 			self.opt_btns[1].config(state=tk.DISABLED)
 		else:
@@ -153,8 +152,8 @@ class ViewController(dm.Observer):
 		date_entered_to		= self.dateentry_to.get_date()
 		time_entered_to		= self.timeentry_to.get_time()
 
-		timebegin = pd.Timestamp(str(date_entered_from) + ' ' + time_entered_from)
-		timeend   = pd.Timestamp(str(date_entered_to)   + ' ' + time_entered_to)
+		timebegin = Timestamp(str(date_entered_from) + ' ' + time_entered_from)
+		timeend   = Timestamp(str(date_entered_to)   + ' ' + time_entered_to)
 		return (timebegin, timeend)
 
 	def __change_font_size(self, tk_elem, font_size):

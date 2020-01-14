@@ -2,16 +2,10 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from typing import List
 
-import requests
-import json
 from functools import reduce
-
-from warnings import warn
-
 from openpyxl import Workbook, load_workbook
 
 import pandas as pd
-import numpy as np
 
 import myutils
 from servercomm import ServerCommunication

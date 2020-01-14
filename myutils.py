@@ -1,6 +1,3 @@
-import numpy as np
-import pandas as pd
-
 def as_text(value):
 	if value is None:
 		return ""

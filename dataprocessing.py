@@ -7,7 +7,6 @@ def calculate_derivation(max_dist, min_weight):
 	return (max_dist / (np.sqrt(- 2 * np.log(min_weight))))
 
 def resample_gaussian(resampler, sigma):
-	#resampled_dataframe = pd.DataFrame()
 	labels = []
 	reps = []
 	loffset = resampler.loffset
@@ -23,6 +22,8 @@ def resample_gaussian(resampler, sigma):
 		sum_weights = np.sum(weights)
 		if (sum_weights == 0):
 			normalization_factor = 1
+			print(weights)
+			print(group)
 		else:
 			normalization_factor = 1 / np.sum(weights)
 		weights = normalization_factor * weights
@@ -38,7 +39,6 @@ def resample_gaussian(resampler, sigma):
 
 	value_dict = {'timestamp' : labels, loc_id : reps}
 	resampled_dataframe = pd.DataFrame(value_dict)
-	#resampled_dataframe = pd.DataFrame()
 	resampled_dataframe = resampled_dataframe.set_index(['timestamp'])
 	return resampled_dataframe
 
@@ -72,7 +72,7 @@ class DataProcessor(object):
 			''' Use monday as base label
 			'''
 			resampler = data.resample(sampling_interval, label = 'left', loffset='1D')
-
+		# 1D
 		elif (offset_delta.seconds == 0):
 			resampler = data.resample(sampling_interval)
 		else:

@@ -1,14 +1,7 @@
 import requests
 import json
-from functools import partial, reduce
-
 from warnings import warn
-
-from openpyxl import Workbook, load_workbook
-
 import pandas as pd
-import numpy as np
-
 import myutils
 
 URL = "https://seatfinder.bibliothek.kit.edu/karlsruhe/getdata.php"
