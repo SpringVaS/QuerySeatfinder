@@ -1,4 +1,4 @@
-import serverquerymodel as sqm
+import datamodel as dm
 
 import tkinter as tk
 from tkinter import ttk
@@ -13,7 +13,7 @@ import tkinter.font as tkFont
 import pandas as pd
 import numpy as np
 
-class ViewController(sqm.Observer):
+class ViewController(dm.Observer):
 	
 	def __init__(self, model):
 		self.model = model
@@ -25,7 +25,7 @@ class ViewController(sqm.Observer):
 		# unsubscribe from model updates
 		self.model.detach(self)
 
-	def update(self, subject: sqm.Subject) -> None:
+	def update(self, subject: dm.Subject) -> None:
 		self.progressbar["value"] = self.model.get_progress()
 		self.progressbar.update()
 
