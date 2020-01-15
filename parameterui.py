@@ -1,4 +1,4 @@
-import serverquerymodel as sqm
+import datamodel as dm
 
 import tkinter as tk
 from tkinter import ttk
@@ -10,10 +10,9 @@ from datetime import datetime
 
 import tkinter.font as tkFont
 
-import pandas as pd
-import numpy as np
+from pandas import Timedelta, Timestamp
 
-class ViewController(sqm.Observer):
+class ViewController(dm.Observer):
 	
 	def __init__(self, model):
 		self.model = model
@@ -25,7 +24,7 @@ class ViewController(sqm.Observer):
 		# unsubscribe from model updates
 		self.model.detach(self)
 
-	def update(self, subject: sqm.Subject) -> None:
+	def update(self, subject: dm.Subject) -> None:
 		self.progressbar["value"] = self.model.get_progress()
 		self.progressbar.update()
 
@@ -90,7 +89,7 @@ class ViewController(sqm.Observer):
 		self.interval_selection.current(0)
 
 	def interval_selected(self, event):
-		if (pd.Timedelta(self.resampling_intervals[self.interval_selection.get()]) > pd.Timedelta('2H')):
+		if (Timedelta(self.resampling_intervals[self.interval_selection.get()]) > Timedelta('2H')):
 			self.opt_btns[0].select()
 			self.opt_btns[1].config(state=tk.DISABLED)
 		else:
@@ -144,8 +143,7 @@ class ViewController(sqm.Observer):
 		print(time_period[0])
 		print(time_period[-1])
 
-		occupancy = self.model.get_info('seatestimate',time_period[0], time_period[-1])
-		self.model.write_to_excel(occupancy, "Seat Occupancy")
+		self.model.seat_estimate_and_pressure_to_excel(time_period[0], time_period[-1])
 
 	def __get_entered_time_period(self):
 		date_entered_from 	= self.dateentry_from.get_date()
@@ -154,8 +152,8 @@ class ViewController(sqm.Observer):
 		date_entered_to		= self.dateentry_to.get_date()
 		time_entered_to		= self.timeentry_to.get_time()
 
-		timebegin = pd.Timestamp(str(date_entered_from) + ' ' + time_entered_from)
-		timeend   = pd.Timestamp(str(date_entered_to)   + ' ' + time_entered_to)
+		timebegin = Timestamp(str(date_entered_from) + ' ' + time_entered_from)
+		timeend   = Timestamp(str(date_entered_to)   + ' ' + time_entered_to)
 		return (timebegin, timeend)
 
 	def __change_font_size(self, tk_elem, font_size):

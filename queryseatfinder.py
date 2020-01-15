@@ -1,4 +1,5 @@
-from serverquerymodel import Model, URL
+from datamodel import Model
+from servercomm import URL
 from parameterui import ViewController
 
 if __name__ == "__main__":
