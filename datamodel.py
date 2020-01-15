@@ -139,13 +139,8 @@ class Model(Subject):
 	def set_sampling_method(self, value):
 		self.selected_sampling_method = value
 
-
 	def get_progress(self):
 		return self.query_progress
-
-	def __update_progress(self, value):
-		self.query_progress = value
-		self.notify()
 
 	def get_info(self, kind, timebegin, timeend):
 		resampled = {}
@@ -226,3 +221,7 @@ class Model(Subject):
 		if len(excel_workbook.sheetnames) > 1:
 			del excel_workbook['Sheet']
 			excel_workbook.save(self.dstpath)
+
+	def __update_progress(self, value):
+		self.query_progress = value
+		self.notify()

@@ -22,8 +22,6 @@ def resample_gaussian(resampler, sigma):
 		sum_weights = np.sum(weights)
 		if (sum_weights == 0):
 			normalization_factor = 1
-			print(weights)
-			print(group)
 		else:
 			normalization_factor = 1 / sum_weights
 		weights = normalization_factor * weights
