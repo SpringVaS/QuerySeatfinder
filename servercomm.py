@@ -12,8 +12,6 @@ class ServerCommunication(object):
 		self.url_sf = url_seatfinder
 		self.timeseries_keys = {'seatestimate' : 'occupied_seats', 'manualcount' : 'occupied_seats'}
 
-		pass
-
 	def __del__(self):
 		pass
 	
@@ -26,7 +24,6 @@ class ServerCommunication(object):
 				locationData = location[kind]
 				pddf = pddf.append(self.__parse_timeseries(kind, locationData, location_id))
 		return pddf
-
 
 	"""
 	Pass list of libraries for which the static data schould be loaded.

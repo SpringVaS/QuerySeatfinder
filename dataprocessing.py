@@ -108,12 +108,19 @@ class DataProcessor(object):
 
 
 	def compute_pressure(self, data):
+
 		mainlib_capacity = self.lib_metadata[self.mainlib].loc['available_seats'].sum()
 		mainlib_pressure = data[self.mainlib].sum(axis = 1) / mainlib_capacity
 		mainlib_pressure.name = "KIT-BIB"
 
+		capacity = self.lib_metadata.loc["available_seats"]
+		pressure_halls = data[self.mainlib] / capacity[self.mainlib]
+
 		speclib_capacities = self.lib_metadata[self.slibs].loc['available_seats']
 		speclib_pressure = data[self.slibs] / speclib_capacities
-		pressure = pd.merge(mainlib_pressure, speclib_pressure, on='timestamp')
+
+		pressure = pd.merge(mainlib_pressure, pressure_halls.sort_index(axis=1), on='timestamp')		
+
+		pressure = pd.merge(pressure, speclib_pressure.sort_index(axis=1), on='timestamp')
 
 		return pressure

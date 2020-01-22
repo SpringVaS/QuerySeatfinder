@@ -185,13 +185,14 @@ class Model(Subject):
 		combinedData = reduce(lambda left,right: 
 			pd.merge(left,right,on='timestamp', how = 'outer').fillna(0), 
 			resampled.values())
-		combinedData = combinedData.sort_index(ascending = False)
+		combinedData.sort_index(ascending = False, inplace = True)
 		return combinedData
 
 	def seat_estimate_and_pressure_to_excel(self, timebegin, timeend):
 		occupancy = self.get_info('seatestimate', timebegin, timeend)
 		mainlib_pressure = self.data_processor.compute_pressure(occupancy)
-		self.__write_to_excel(occupancy, "Occupancy")
+		grouped_occupancy = self.__grouped_seat_info(occupancy)
+		self.__write_to_excel(grouped_occupancy, "Occupancy")
 		self.__write_to_excel(mainlib_pressure, "Proportional occupancy")
 		self.__update_progress(100)
 
@@ -212,7 +213,19 @@ class Model(Subject):
 					openingHours_str = weekday_opening + ": " + time_opening + " - " + weekday_closing + ": " + time_closing
 				ohlist_display.append(openingHours_str)
 			displayable_metadata[location_id]['opening_hours'] = ohlist_display
+
+		displayable_metadata = pd.merge(displayable_metadata[self.mainlib].sort_index(axis=1),
+										displayable_metadata[self.slibs].sort_index(axis=1),
+										on=displayable_metadata.index)
+
 		return displayable_metadata
+
+	def __grouped_seat_info(self, data):
+		mainlib = data[self.mainlib].sum(axis=1)
+		mainlib.name = "KIT-BIB"
+		merged = pd.merge(mainlib, data[self.slibs].sort_index(axis=1), on='timestamp')
+		return merged
+
 
 	def __write_to_excel(self, dataframe, sheet_name, auto_format = False):
 		excel_workbook = load_workbook(self.dstpath)
