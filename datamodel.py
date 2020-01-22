@@ -125,7 +125,7 @@ class Model(Subject):
 		workbook = Workbook()
 		workbook.save(dstpath)
 
-		self.__write_to_excel(self.libs_metadata, "Libraries", True)
+		self.__write_to_excel(self.__displayable_lib_metadata(), "Libraries", True)
 		self.__delete_standard_sheet()
 
 
@@ -194,6 +194,25 @@ class Model(Subject):
 		self.__write_to_excel(occupancy, "Occupancy")
 		self.__write_to_excel(mainlib_pressure, "Proportional occupancy")
 		self.__update_progress(100)
+
+	def __displayable_lib_metadata(self):
+		displayable_metadata = self.libs_metadata.copy(deep = True)
+		for location_id in self.libs_metadata.keys():
+			entry = displayable_metadata[location_id]['opening_hours']
+			ohlist_display = []
+			for interval in entry:
+				openingHours_str = ""
+				weekday_opening = interval.left.strftime("%A")
+				weekday_closing = interval.right.strftime("%A")
+				time_opening = interval.left.strftime("%H:%M")
+				time_closing = interval.right.strftime("%H:%M")
+				if (weekday_opening == weekday_closing):
+					openingHours_str = weekday_opening + ": " + time_opening + " - " + time_closing
+				else:
+					openingHours_str = weekday_opening + ": " + time_opening + " - " + weekday_closing + ": " + time_closing
+				ohlist_display.append(openingHours_str)
+			displayable_metadata[location_id]['opening_hours'] = ohlist_display
+		return displayable_metadata
 
 	def __write_to_excel(self, dataframe, sheet_name, auto_format = False):
 		excel_workbook = load_workbook(self.dstpath)

@@ -50,8 +50,8 @@ class ServerCommunication(object):
 				data = json.load(datafile)
 
 
-		callbacks = {   'timestamp'     : self.__parse_timestamps, 
-						'opening_hours' : self.__parse_openinghours}
+		callbacks = {   'timestamp'     : myutils.parse_timestamps, 
+						'opening_hours' : myutils.parse_openinghours}
 
 		staticlibdata = {}
 		for location in data:
@@ -67,7 +67,7 @@ class ServerCommunication(object):
 
 	def __parse_timeseries(self, kind, data, locationKey):
 		data_list = data[locationKey]
-		timestamp_list = [self.__parse_timestamps(pointInTime['timestamp']) for pointInTime in data_list]
+		timestamp_list = [myutils.parse_timestamps(pointInTime['timestamp']) for pointInTime in data_list]
 		value_list = [pointInTime[self.timeseries_keys[kind]] for pointInTime in data_list]
 
 		value_dict = {'timestamp' : timestamp_list, locationKey : value_list}
@@ -75,33 +75,6 @@ class ServerCommunication(object):
 		timeSeriesDataFrame = timeSeriesDataFrame.set_index(['timestamp'])
 		return timeSeriesDataFrame
 
-	def __parse_openinghours(self, data):
-		ohlist = []
-		# weekly opening hours
-		#print(data[keylist[1]])
-		for interval in data['weekly_opening_hours']:
-			openingHours_str = ""
-			opening = self.__parse_timestamps(interval[0])
-			closing = self.__parse_timestamps(interval[1])
-			weekday_opening = opening.strftime("%A")
-			weekday_closing = closing.strftime("%A")
-			time_opening = opening.strftime("%H:%M")
-			time_closing = closing.strftime("%H:%M")
-			if (weekday_opening == weekday_closing):
-				openingHours_str = weekday_opening + ": " + time_opening + " - " + time_closing
-			else:
-				openingHours_str = weekday_opening + ": " + time_opening + " - " + weekday_closing + ": " + time_closing
-			#print(opening)
-			ohlist.append(openingHours_str)
-		return ohlist
-
-	def __parse_timestamps(self, data):
-		#sheet.write(row, column, str(data))
-		if (not isinstance(data, dict)):
-			return data
-		keylist = list(data.keys());
-		if (keylist[0] == 'date'):
-			return pd.Timestamp(data['date'])
 
 	def __query_server(self, kind, location_list, timebegin, timeend):
 		queryparams =   {'location[]'   : location_list, 

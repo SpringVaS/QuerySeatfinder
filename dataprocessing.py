@@ -40,10 +40,26 @@ def resample_gaussian(resampler, sigma):
 	resampled_dataframe = resampled_dataframe.set_index(['timestamp'])
 	return resampled_dataframe
 
+def resample_opening_hours(array_like, opening_hours):
+	sum_entries = 0
+	for entry in array_like.index:
+		#print(entry.day_name())
+		opened = False;
+		for interval in opening_hours:
+			if entry.dayofweek in range(interval.left.dayofweek, interval.right.dayofweek + 1):
+				if (entry.time() >= interval.left.time() and entry.time() <= interval.right.time()):
+					opened = True;
+			else:
+				pass
+		print(opened)
+		print(opening_hours)
+		print(entry)
+		print(entry.day_name())
+
 class DataProcessor(object):
 
-	def __init__(self, mainlib, slibs, lib_meatadata):
-		self.lib_meatadata = lib_meatadata
+	def __init__(self, mainlib, slibs, lib_metadata):
+		self.lib_metadata = lib_metadata
 		self.slibs = slibs
 		self.mainlib = mainlib
 
@@ -62,7 +78,7 @@ class DataProcessor(object):
 		offset_delta = pd.Timedelta(0)
 		if (timedelta < pd.Timedelta('1D')):
 			offset_delta = timedelta / 2
-
+		
 		"""
 		Apply custom aggregarion function. Use functools to include parameter.
 		"""
@@ -86,18 +102,17 @@ class DataProcessor(object):
 		elif (sampling_method == 'Gauss'):
 			sigma = calculate_derivation(offset_delta.seconds, 0.2)
 			location_data = resample_gaussian(resampler, sigma)
-
+		
 		location_data = location_data.sort_index(ascending = False)
 		return location_data
 
 
-
 	def compute_pressure(self, data):
-		mainlib_capacity = self.lib_meatadata[self.mainlib].loc['available_seats'].sum()
+		mainlib_capacity = self.lib_metadata[self.mainlib].loc['available_seats'].sum()
 		mainlib_pressure = data[self.mainlib].sum(axis = 1) / mainlib_capacity
 		mainlib_pressure.name = "KIT-BIB"
 
-		speclib_capacities = self.lib_meatadata[self.slibs].loc['available_seats']
+		speclib_capacities = self.lib_metadata[self.slibs].loc['available_seats']
 		speclib_pressure = data[self.slibs] / speclib_capacities
 		pressure = pd.merge(mainlib_pressure, speclib_pressure, on='timestamp')
 
