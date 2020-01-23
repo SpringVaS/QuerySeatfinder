@@ -3,7 +3,6 @@ from abc import ABC, abstractmethod
 from typing import List
 
 from functools import reduce
-from openpyxl import Workbook, load_workbook
 
 import pandas as pd
 
@@ -85,8 +84,8 @@ class Model(Subject):
 		for observer in self._observers:
 			observer.update(self)
 
-	def __init__(self, url_seatfinder, dstpath):
-		self.dstpath = dstpath
+	def __init__(self, url_seatfinder, printer):
+
 
 		self.server = ServerCommunication(url_seatfinder)
 
@@ -122,11 +121,12 @@ class Model(Subject):
 		self.query_progress = 0
 
 		  # Create Exel File
-		workbook = Workbook()
-		workbook.save(dstpath)
+		
+		self.printer = printer
+		self.printer.set_lib_identifier(self.mainlib, self.slibs)
 
-		self.__write_to_excel(self.__displayable_lib_metadata(), "Libraries", True)
-		self.__delete_standard_sheet()
+		self.printer.export_lib_metadata(self.libs_metadata)
+
 
 
 	def set_resampling_interval(self, value):
@@ -188,71 +188,19 @@ class Model(Subject):
 		combinedData.sort_index(ascending = False, inplace = True)
 		return combinedData
 
-	def seat_estimate_and_pressure_to_excel(self, timebegin, timeend):
+	def output_data(self, timebegin, timeend):
 		occupancy = self.get_info('seatestimate', timebegin, timeend)
-		mainlib_pressure = self.data_processor.compute_pressure(occupancy)
-		grouped_occupancy = self.__grouped_seat_info(occupancy)
-		self.__write_to_excel(grouped_occupancy, "Occupancy")
-		self.__write_to_excel(mainlib_pressure, "Proportional occupancy")
+		pressure = self.data_processor.compute_pressure(occupancy)
+		self.printer.export_data(self.__grouped_seat_info(occupancy), "Occupancy")
+		self.printer.export_data(pressure, "Pressure")
 		self.__update_progress(100)
 
-	def __displayable_lib_metadata(self):
-		displayable_metadata = self.libs_metadata.copy(deep = True)
-		for location_id in self.libs_metadata.keys():
-			entry = displayable_metadata[location_id]['opening_hours']
-			ohlist_display = []
-			for interval in entry:
-				openingHours_str = ""
-				weekday_opening = interval.left.strftime("%A")
-				weekday_closing = interval.right.strftime("%A")
-				time_opening = interval.left.strftime("%H:%M")
-				time_closing = interval.right.strftime("%H:%M")
-				if (weekday_opening == weekday_closing):
-					openingHours_str = weekday_opening + ": " + time_opening + " - " + time_closing
-				else:
-					openingHours_str = weekday_opening + ": " + time_opening + " - " + weekday_closing + ": " + time_closing
-				ohlist_display.append(openingHours_str)
-			displayable_metadata[location_id]['opening_hours'] = ohlist_display
-
-		displayable_metadata = pd.merge(displayable_metadata[self.mainlib].sort_index(axis=1),
-										displayable_metadata[self.slibs].sort_index(axis=1),
-										on=displayable_metadata.index)
-
-		return displayable_metadata
 
 	def __grouped_seat_info(self, data):
 		mainlib = data[self.mainlib].sum(axis=1)
 		mainlib.name = "KIT-BIB"
 		merged = pd.merge(mainlib, data[self.slibs].sort_index(axis=1), on='timestamp')
 		return merged
-
-
-	def __write_to_excel(self, dataframe, sheet_name, auto_format = False):
-		excel_workbook = load_workbook(self.dstpath)
-		writer = pd.ExcelWriter(self.dstpath, engine = 'openpyxl')
-		writer.book = excel_workbook
-		dataframe.to_excel(writer, sheet_name = sheet_name)
-		sheet = writer.sheets[sheet_name]
-		sheet.column_dimensions['A'].width = 30
-		writer.save()
-		writer.close()
-		if auto_format:
-			self.__sheet_autoformat(sheet_name)
-
-	def __sheet_autoformat(self, sheet_name):
-		excel_workbook = load_workbook(self.dstpath)
-		sheet = excel_workbook[sheet_name]
-
-		for column in sheet.columns:
-			length = max(len(myutils.as_text(cell.value)) for cell in column)
-			sheet.column_dimensions[myutils.index_to_letter(column[0].column)].width = length
-		excel_workbook.save(self.dstpath)
-
-	def __delete_standard_sheet(self):
-		excel_workbook = load_workbook(self.dstpath)
-		if len(excel_workbook.sheetnames) > 1:
-			del excel_workbook['Sheet']
-			excel_workbook.save(self.dstpath)
 
 	def __update_progress(self, value):
 		self.query_progress = value
