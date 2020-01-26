@@ -1,9 +1,9 @@
 from datamodel import Model
 from servercomm import URL
 from parameterui import ViewController
-import printers as pnt
+from excelprinter import ExcelPrinter
 
 if __name__ == "__main__":
-	p = pnt.ExcelPrinter('data.xlsx')
+	p = ExcelPrinter('data.xlsx')
 	m = Model(URL, p)
 	c = ViewController(m)
