@@ -16,10 +16,12 @@ class ExcelPrinter(Printer):
 
 	def export_lib_metadata(self, metadata):
 		self.__write_to_excel(self.__displayable_lib_metadata(metadata), "Libraries", True)
-		self.__delete_standard_sheet()
 
 	def export_data(self, data, name):
 		self.__write_to_excel(data, name)
+
+	def finish_up(self):
+		self.__delete_standard_sheet()
 
 	def __displayable_lib_metadata(self, metadata):
 		displayable_metadata = metadata.copy(deep = True)

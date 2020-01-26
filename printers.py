@@ -10,6 +10,10 @@ class Printer(ABC):
 	@abstractmethod
 	def export_data(self, data, name):
 		pass
+	
+	@abstractmethod
+	def finish_up(self):
+		pass
 
 	def set_lib_identifier(self, mainlib, slibs):
 		self.mainlib = mainlib

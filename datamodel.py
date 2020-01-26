@@ -193,6 +193,7 @@ class Model(Subject):
 		pressure = self.data_processor.compute_pressure(occupancy)
 		self.printer.export_data(self.__grouped_seat_info(occupancy), "Occupancy")
 		self.printer.export_data(pressure, "Pressure")
+		self.printer.finish_up()
 		self.__update_progress(100)
 
 

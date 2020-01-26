@@ -84,7 +84,7 @@ class ViewController(dm.Observer):
 										'1 week'	: '1W'}
 		self.label_interval = tk.Label(self.gui_pane, text='sampling interval:')
 		self.interval_selection = ttk.Combobox(self.gui_pane, 
-			values = list(self.resampling_intervals.keys()))
+			values = list(self.resampling_intervals.keys()), state="readonly")
 		self.interval_selection.bind("<<ComboboxSelected>>", self.interval_selected)
 		self.interval_selection.current(0)
 

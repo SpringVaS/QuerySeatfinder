@@ -11,9 +11,14 @@ class Plotter(Printer):
 
 	def __del__(self):
 		pass
+		#plt.show(block=False)
 
 	def export_lib_metadata(self, metadata):
 		pass
 
 	def export_data(self, data, name):
+		data.sort_index(ascending=True)
 		data.plot()
+
+	def finish_up(self):
+		plt.show(block = False)
