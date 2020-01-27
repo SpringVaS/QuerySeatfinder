@@ -107,19 +107,32 @@ class DataProcessor(object):
 		return location_data
 
 
-	def compute_pressure(self, data):
-
+	def compute_mainlib_pressure(self, occupancy_data):
 		mainlib_capacity = self.lib_metadata[self.mainlib].loc['available_seats'].sum()
-		mainlib_pressure = data[self.mainlib].sum(axis = 1) / mainlib_capacity
+		mainlib_pressure = occupancy_data[self.mainlib].sum(axis = 1) / mainlib_capacity
 		mainlib_pressure.name = "KIT-BIB"
 
-		capacity = self.lib_metadata.loc["available_seats"]
-		pressure_halls = data[self.mainlib] / capacity[self.mainlib]
+		return mainlib_pressure
 
+	def compute_reading_halls_pressure(self, occupancy_data):
+		capacity = self.lib_metadata[self.mainlib].loc['available_seats']
+		halls_pressure = occupancy_data[self.mainlib] / capacity
+
+		return halls_pressure
+
+	def compute_speclibs_pressure(self, occupancy_data):
 		speclib_capacities = self.lib_metadata[self.slibs].loc['available_seats']
-		speclib_pressure = data[self.slibs] / speclib_capacities
+		speclib_pressure = occupancy_data[self.slibs] / speclib_capacities
 
-		pressure = pd.merge(mainlib_pressure, pressure_halls.sort_index(axis=1), on='timestamp')		
+		return speclib_pressure
+
+
+	def compute_pressure(self, occupancy_data):
+		mainlib_pressure = self.compute_mainlib_pressure(occupancy_data)
+		halls_pressure = self.compute_reading_halls_pressure(occupancy_data)
+		speclib_pressure = self.compute_speclibs_pressure(occupancy_data)
+
+		pressure = pd.merge(mainlib_pressure, halls_pressure.sort_index(axis=1), on='timestamp')		
 
 		pressure = pd.merge(pressure, speclib_pressure.sort_index(axis=1), on='timestamp')
 

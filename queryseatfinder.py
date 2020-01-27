@@ -5,7 +5,7 @@ from excelprinter import ExcelPrinter
 from plotting import Plotter
 
 if __name__ == "__main__":
-	ep = ExcelPrinter('data.xlsx')
-	pp = Plotter()
-	m = Model(URL, pp)
+	excelPrinter = ExcelPrinter('data.xlsx')
+	plotter = Plotter()
+	m = Model(URL, plotter)
 	c = ViewController(m)
