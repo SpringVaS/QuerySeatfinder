@@ -8,7 +8,7 @@ class Printer(ABC):
 		pass
 
 	@abstractmethod
-	def export_data(self, data, name):
+	def export_data(self, data, title, quantity_description):
 		pass
 	
 	@abstractmethod

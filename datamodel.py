@@ -191,8 +191,9 @@ class Model(Subject):
 	def output_data(self, timebegin, timeend):
 		occupancy = self.get_info('seatestimate', timebegin, timeend)
 		pressure = self.data_processor.compute_pressure(occupancy)
-		self.printer.export_data(self.__grouped_seat_info(occupancy), "Occupancy")
-		self.printer.export_data(pressure, "Pressure")
+		self.printer.export_data(self.__grouped_seat_info(occupancy),
+			"Occupancy", "absolte amount taken seats")
+		self.printer.export_data(pressure, "Pressure", "taken seats / available seats")
 		self.printer.finish_up()
 		self.__update_progress(100)
 
@@ -201,11 +202,23 @@ class Model(Subject):
 		
 		mainlib_pressure = self.data_processor.compute_mainlib_pressure(occupancy)
 		speclib_pressure = self.data_processor.compute_speclibs_pressure(occupancy)
-		mainlib_pressure_vs_speclib_pressure  = pd.merge(mainlib_pressure, speclib_pressure[['FBI', 'FBC']], on='timestamp')
+		mainlib_pressure_vs_speclib_pressure  = pd.merge(mainlib_pressure, speclib_pressure[['FBI', 'LAF']], on='timestamp')
 
-		self.printer.export_data(self.__grouped_seat_info(occupancy), "Total amount in libraries")
-		self.printer.export_data(mainlib_pressure, "Pressure in main library")
-		self.printer.export_data(mainlib_pressure_vs_speclib_pressure, "Pressure in campus libraries")
+		pressure_ratio_description = "Anteil belegter Sitzplätze"
+		"""
+		self.printer.export_data(self.__grouped_seat_info(occupancy),
+			"Absolute Anzahl belegter Sitzplätze in den Bibliotheken auf dem Campus",
+			"Absolute Anzahl belegter Sitzplätze")
+		"""
+		self.printer.set_ylimits(0,1)
+		self.printer.export_data(mainlib_pressure, "Sitzplatzdruck in der Hauptbibliothek",
+			pressure_ratio_description)
+		self.printer.export_data(mainlib_pressure_vs_speclib_pressure,
+			"Sitzplatzdruck in der Campusbibliotheken", pressure_ratio_description)
+		self.printer.set_ylimits(0,-1)
+		self.printer.export_data(self.__grouped_seat_info(occupancy),
+			"Absolute Anzahl belegter Sitzplätze in den Bibliotheken auf dem Campus",
+			"Absolute Anzahl belegter Sitzplätze")
 		#self.printer.export_data(mainlib_pressure_vs_speclib_pressure, "Pressure in campus libraries")
 
 		self.printer.finish_up()
