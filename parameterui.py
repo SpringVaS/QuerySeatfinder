@@ -62,8 +62,8 @@ class ViewController(dm.Observer):
 		self.progressbar.pack(padx = 10, pady = 10, side = tk.BOTTOM, fill=tk.X, expand=0)
 
 
-		self.timeentry_from.set_time(datetime.now() - dt.timedelta(hours = 2))
-		self.timeentry_to.set_time(datetime.now())
+		self.timeentry_from.set_time(datetime(2012,1,1))
+		self.timeentry_to.set_time(datetime(2012,1,1))
 
 		self.dateentry_from.set_date(self.dateentry_to.get_date() - dt.timedelta(days = 1))
 
@@ -142,6 +142,8 @@ class ViewController(dm.Observer):
 
 		print(time_period[0])
 		print(time_period[-1])
+
+		#self.model.output_data(time_period[0], time_period[-1])
 
 		self.model.output_experiment_data(time_period[0], time_period[-1])
 

@@ -210,12 +210,12 @@ class Model(Subject):
 			"Absolute Anzahl belegter Sitzplätze in den Bibliotheken auf dem Campus",
 			"Absolute Anzahl belegter Sitzplätze")
 		"""
-		self.printer.set_ylimits(0,1)
+		self.printer.set_ylimits(0,1.05)
 		self.printer.export_data(mainlib_pressure, "Sitzplatzdruck in der Hauptbibliothek",
 			pressure_ratio_description)
 		self.printer.export_data(mainlib_pressure_vs_speclib_pressure,
 			"Sitzplatzdruck in der Campusbibliotheken", pressure_ratio_description)
-		self.printer.set_ylimits(0,-1)
+		self.printer.set_ylimits(0,-10)
 		self.printer.export_data(self.__grouped_seat_info(occupancy),
 			"Absolute Anzahl belegter Sitzplätze in den Bibliotheken auf dem Campus",
 			"Absolute Anzahl belegter Sitzplätze")

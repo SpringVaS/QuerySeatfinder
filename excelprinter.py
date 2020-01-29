@@ -18,7 +18,7 @@ class ExcelPrinter(Printer):
 		self.__write_to_excel(self.__displayable_lib_metadata(metadata), "Libraries", True)
 
 	def export_data(self, data, title, quantity_description):
-		self.__write_to_excel(data, name)
+		self.__write_to_excel(data, title)
 
 	def finish_up(self):
 		self.__delete_standard_sheet()
