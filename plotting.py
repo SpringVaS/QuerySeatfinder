@@ -8,12 +8,12 @@ import pandas as pd
 
 
 colors =   {	'KIT-BIB':	'#32A189FF',
-				'FBC' : 'Green',      # Chemie
-				'FBP': 'Purple',      # Physik
-				'LAF': 'Red',      # Lernzentrum am Fasanenschloesschen}
-				'FBA' : 'Blue',      # Architektur
+				'FBC' : '#1c3e5eff',      # Chemie
+				'FBP': '#a0acffff',      # Physik
+				'LAF': '#294EFFFF',      # Lernzentrum am Fasanenschloesschen}
+				'FBA' : 'Gray',      # Architektur
 				'FBI' : 'Orange',      # Informatik
-				'FBM' : 'Yellow'}     # Mathematik
+				'FBM' : '#ffa0dfff'}     # Mathematik
 
 class Plotter(Printer):
 
@@ -22,12 +22,10 @@ class Plotter(Printer):
 		self.pass_index = 0
 		self.ylimit_min = 0
 		self.ylimit_max = 0
-
-		self.hour_locator = mdates.HourLocator(byhour=range(24), interval = 2)
 		
 	
 	def __del__(self):
-		plt.close()
+		pass
 
 	def export_lib_metadata(self, metadata):
 		pass
@@ -42,18 +40,16 @@ class Plotter(Printer):
 			reverse order of dataframe for plot. Original begins with newest values
 		'''
 		data.sort_index(ascending=True)
-		#data[::-1] 
-		print(title)
 
-		keys = (data.keys())
+		print(title)
 
 		fig = plt.figure()
 		ax = fig.gca(ylabel=quantity_description)
-		#ax.plot_date(data.index, data, '-')
-		print(data)
-		data.plot(title = title, ax = ax, x_compat=True, color = [colors.get(x, '#333333') for x in data.columns])
-		ax.xaxis.set_major_locator(mdates.HourLocator(interval=2))
-		ax.xaxis.set_major_formatter(mdates.DateFormatter('%H:%M'))
+
+		data.plot(title = title, ax = ax, x_compat=True,
+		 color = [colors[x] for x in data.columns])
+		#ax.xaxis.set_major_locator(mdates.HourLocator(interval=3))
+		#ax.xaxis.set_major_formatter(mdates.DateFormatter('%H:%M'))
 		ax.set_xlabel('')
 		if (self.ylimit_max > - 1):
 			ax.set_ylim(ymin = self.ylimit_min, ymax = self.ylimit_max)

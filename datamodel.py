@@ -202,7 +202,7 @@ class Model(Subject):
 		
 		mainlib_pressure = self.data_processor.compute_mainlib_pressure(occupancy)
 		speclib_pressure = self.data_processor.compute_speclibs_pressure(occupancy)
-		mainlib_pressure_vs_speclib_pressure  = pd.merge(mainlib_pressure, speclib_pressure[['FBI', 'LAF']], on='timestamp')
+		mainlib_pressure_vs_speclib_pressure  = pd.merge(mainlib_pressure, speclib_pressure, on='timestamp')
 
 		pressure_ratio_description = "Anteil belegter Sitzplätze"
 		"""

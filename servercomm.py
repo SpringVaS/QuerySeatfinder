@@ -78,7 +78,7 @@ class ServerCommunication(object):
 						 'sublocs'      : 0,
 						 'values'       : kind,
 						 'before'       : timeend,
-						 'limit'        : 1000}
+						 'limit'        : 5000}
 		data = {}
 		try:
 			r = requests.get(url = self.url_sf, params = queryparams)
