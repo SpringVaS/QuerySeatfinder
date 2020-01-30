@@ -13,7 +13,14 @@ colors =   {	'KIT-BIB':	'#32A189FF',
 				'LAF': '#294EFFFF',      # Lernzentrum am Fasanenschloesschen}
 				'FBA' : 'Gray',      # Architektur
 				'FBI' : 'Orange',      # Informatik
-				'FBM' : '#ffa0dfff'}     # Mathematik
+				'FBM' : '#ffa0dfff',
+
+				'LSG' : '#1c3e5eff',      
+				'LSM' : '#a0acffff',      
+				'LST' : '#294EFFFF', 
+				'LSN' : 'Gray', 
+				'LSW' : 'Orange',
+				'LBS' : '#ffa0dfff'} 
 
 class Plotter(Printer):
 
@@ -22,7 +29,7 @@ class Plotter(Printer):
 		self.pass_index = 0
 		self.ylimit_min = 0
 		self.ylimit_max = 0
-		plt.xkcd()
+		#plt.xkcd()
 		
 	
 	def __del__(self):
@@ -47,7 +54,7 @@ class Plotter(Printer):
 		fig = plt.figure()
 		ax = fig.gca(ylabel=quantity_description)
 
-		data.plot(title = title, ax = ax, x_compat=False,
+		data.plot(title = title, ax = ax, x_compat=False,  linewidth=2,
 		 color = [colors[x] for x in data.columns])
 		#ax.xaxis.set_major_locator(mdates.HourLocator(interval=3))
 		#ax.xaxis.set_major_formatter(mdates.DateFormatter('%H:%M'))

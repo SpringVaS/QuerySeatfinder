@@ -11,6 +11,9 @@ class Printer(ABC):
 	def export_data(self, data, title, quantity_description):
 		pass
 	
+	def set_ylimits(self, ylimit_min, ylimit_max):
+		pass
+
 	@abstractmethod
 	def finish_up(self):
 		pass

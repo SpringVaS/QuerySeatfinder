@@ -191,9 +191,12 @@ class Model(Subject):
 	def output_data(self, timebegin, timeend):
 		occupancy = self.get_info('seatestimate', timebegin, timeend)
 		pressure = self.data_processor.compute_pressure(occupancy)
+		self.printer.set_ylimits(0,-10)
 		self.printer.export_data(self.__grouped_seat_info(occupancy),
-			"Occupancy", "absolte amount taken seats")
-		self.printer.export_data(pressure, "Pressure", "taken seats / available seats")
+			"Bel. Plätze", "Anzahl belegte Sitzplätze")
+		self.printer.set_ylimits(0,1.05)
+		self.printer.export_data(self.__all_main_lib_data(pressure), "Sitzplatzdruck Hauptbib", "Anteil belegter Sitzplätze")
+		self.printer.export_data(pressure[self.slibs].sort_index(axis=1), "Sitzplatzdruck Fachbibs",  "Anteil belegter Sitzplätze")
 		self.printer.finish_up()
 		self.__update_progress(100)
 
@@ -223,6 +226,13 @@ class Model(Subject):
 
 		self.printer.finish_up()
 		self.__update_progress(100)
+
+	def __all_main_lib_data(self, data):
+		ret = data[self.mainlib].sort_index(axis=1)
+		if ('KIT-BIB' in data.keys()):
+			ret = pd.merge(data['KIT-BIB'], ret, on='timestamp')
+
+		return ret
 
 
 	def __grouped_seat_info(self, data):
