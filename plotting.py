@@ -22,6 +22,7 @@ class Plotter(Printer):
 		self.pass_index = 0
 		self.ylimit_min = 0
 		self.ylimit_max = 0
+		plt.xkcd()
 		
 	
 	def __del__(self):
@@ -46,7 +47,7 @@ class Plotter(Printer):
 		fig = plt.figure()
 		ax = fig.gca(ylabel=quantity_description)
 
-		data.plot(title = title, ax = ax, x_compat=True,
+		data.plot(title = title, ax = ax, x_compat=False,
 		 color = [colors[x] for x in data.columns])
 		#ax.xaxis.set_major_locator(mdates.HourLocator(interval=3))
 		#ax.xaxis.set_major_formatter(mdates.DateFormatter('%H:%M'))
