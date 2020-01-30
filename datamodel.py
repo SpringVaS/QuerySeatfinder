@@ -101,9 +101,9 @@ class Model(Subject):
 		self.slibs =   {'FBC',      # Chemie
 						'FBP',      # Physik
 						'LAF',      # Lernzentrum am Fasanenschloesschen}
-						'FBA',      # Architektur
+						#'FBA',      # Architektur, sehr klein, offiziel 15 Plätze
 						'FBI',      # Informatik
-						'FBM'}     # Mathematik
+						'FBM'}      # Mathematik
 						#'FBW'}     # Wiwi - zur Zeit geschlossen
 
 		self.all_libs = [*(self.mainlib), *(self.slibs)]
@@ -217,7 +217,7 @@ class Model(Subject):
 		self.printer.export_data(mainlib_pressure, "Sitzplatzdruck in der Hauptbibliothek",
 			pressure_ratio_description)
 		self.printer.export_data(mainlib_pressure_vs_speclib_pressure,
-			"Sitzplatzdruck in der Campusbibliotheken", pressure_ratio_description)
+			"Sitzplatzdruck in den Bibliotheken auf dem Campus", pressure_ratio_description)
 		self.printer.set_ylimits(0,-10)
 		self.printer.export_data(self.__grouped_seat_info(occupancy),
 			"Absolute Anzahl belegter Sitzplätze in den Bibliotheken auf dem Campus",
