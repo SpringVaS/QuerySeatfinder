@@ -78,14 +78,14 @@ class ServerCommunication(object):
 						 'sublocs'      : 0,
 						 'values'       : kind,
 						 'before'       : timeend,
-						 'limit'        : 5000}
+						 'limit'        : 4000}
 		data = {}
 		try:
 			r = requests.get(url = self.url_sf, params = queryparams)
 			data = r.json()
 			# write back the json from server to local hard drive for debugging purposes
-			with open('libdata.json', 'w+') as ld:
-				ld.write(r.text)
+			#with open('libdata.json', 'w+') as ld:
+			#	ld.write(r.text)
 		except requests.ConnectionError as e:
 			warn('No server connection')
 
