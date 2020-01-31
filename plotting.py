@@ -5,8 +5,6 @@ import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 import pandas as pd
 
-
-
 colors =   {	'KIT-BIB':	'#32A189FF',
 				'FBC' : '#1c3e5eff',      # Chemie
 				'FBP': '#a0acffff',      # Physik
@@ -52,6 +50,7 @@ class Plotter(Printer):
 		print(title)
 
 		fig = plt.figure()
+		fig.set_size_inches(8.5, 6)
 		ax = fig.gca(ylabel=quantity_description)
 
 		data.plot(title = title, ax = ax, x_compat=False,  linewidth=2,
@@ -59,6 +58,7 @@ class Plotter(Printer):
 		#ax.xaxis.set_major_locator(mdates.HourLocator(interval=3))
 		#ax.xaxis.set_major_formatter(mdates.DateFormatter('%H:%M'))
 		ax.set_xlabel('')
+		ax.legend(loc='upper left')
 		if (self.ylimit_max > - 1):
 			ax.set_ylim(ymin = self.ylimit_min, ymax = self.ylimit_max)
 		else:
