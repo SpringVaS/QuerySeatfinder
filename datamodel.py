@@ -207,6 +207,12 @@ class Model(Subject):
 		speclib_pressure = self.data_processor.compute_speclibs_pressure(occupancy)
 		mainlib_pressure_vs_speclib_pressure  = pd.merge(mainlib_pressure, speclib_pressure, on='timestamp')
 
+		grouped_occupancy = self.__grouped_seat_info(occupancy)
+
+	
+		#mask = grouped_occupancy.transform(lambda x: x==x.max()).astype('bool')
+		#grouped_occupancy.loc[mask]
+
 		pressure_ratio_description = "Anteil belegter Sitzplätze"
 		"""
 		self.printer.export_data(self.__grouped_seat_info(occupancy),
@@ -219,7 +225,7 @@ class Model(Subject):
 		self.printer.export_data(mainlib_pressure_vs_speclib_pressure,
 			"Sitzplatzdruck in den Bibliotheken auf dem Campus", pressure_ratio_description)
 		self.printer.set_ylimits(0,-10)
-		self.printer.export_data(self.__grouped_seat_info(occupancy),
+		self.printer.export_data(grouped_occupancy,
 			"Absolute Anzahl belegter Sitzplätze in den Bibliotheken auf dem Campus",
 			"Absolute Anzahl belegter Sitzplätze")
 		#self.printer.export_data(mainlib_pressure_vs_speclib_pressure, "Pressure in campus libraries")
@@ -230,7 +236,7 @@ class Model(Subject):
 	def __all_main_lib_data(self, data):
 		ret = data[self.mainlib].sort_index(axis=1)
 		if ('KIT-BIB' in data.keys()):
-			ret = pd.merge(data['KIT-BIB'], ret, on='timestamp')
+			ret = pd.merge(data[['KIT-BIB']], ret, on='timestamp')
 
 		return ret
 

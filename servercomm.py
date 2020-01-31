@@ -63,6 +63,10 @@ class ServerCommunication(object):
 		return pd.DataFrame(staticlibdata)
 
 	def __parse_timeseries(self, kind, data, locationKey):
+		if(len(data) == 0):
+			tsdf = pd.DataFrame({'timestamp' : [], locationKey : []})
+			tsdf.set_index(['timestamp'])
+			return tsdf
 		data_list = data[locationKey]
 		timestamp_list = [myutils.parse_timestamps(pointInTime['timestamp']) for pointInTime in data_list]
 		value_list = [pointInTime[self.timeseries_keys[kind]] for pointInTime in data_list]
