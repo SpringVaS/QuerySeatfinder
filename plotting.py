@@ -69,4 +69,4 @@ class Plotter(Printer):
 
 	def finish_up(self):
 		self.pass_index += 1
-		plt.show(block = False)
+		plt.show()
