@@ -73,7 +73,6 @@ class DataProcessor(object):
 			the actual label ticks are moved half the resampling interval.
 			The label names are also offset half the resampling interval.
 		"""
-
 		timedelta = pd.Timedelta(sampling_interval)
 		interval_seconds = str(timedelta.seconds) + 'S'
 		offset_delta = pd.Timedelta(0)
@@ -118,13 +117,13 @@ class DataProcessor(object):
 		capacity = self.lib_metadata[self.mainlib].loc['available_seats']
 		halls_pressure = occupancy_data[self.mainlib] / capacity
 
-		return halls_pressure
+		return halls_pressure.sort_index(axis=1)
 
 	def compute_speclibs_pressure(self, occupancy_data):
 		speclib_capacities = self.lib_metadata[self.slibs].loc['available_seats']
 		speclib_pressure = occupancy_data[self.slibs] / speclib_capacities
 
-		return speclib_pressure
+		return speclib_pressure.sort_index(axis=1)
 
 
 	def compute_pressure(self, occupancy_data):
