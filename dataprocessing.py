@@ -73,6 +73,7 @@ class DataProcessor(object):
 			the actual label ticks are moved half the resampling interval.
 			The label names are also offset half the resampling interval.
 		"""
+
 		timedelta = pd.Timedelta(sampling_interval)
 		interval_seconds = str(timedelta.seconds) + 'S'
 		offset_delta = pd.Timedelta(0)
