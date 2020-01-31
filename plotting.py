@@ -22,11 +22,12 @@ colors =   {	'KIT-BIB':	'#32A189FF',
 
 class Plotter(Printer):
 
-	def __init__(self):
+	def __init__(self, block_on_finish = False):
 		self.plot_index = 1
 		self.pass_index = 0
 		self.ylimit_min = 0
 		self.ylimit_max = 0
+		self.block_on_finish = block_on_finish
 		#plt.xkcd()
 		
 	
@@ -55,8 +56,6 @@ class Plotter(Printer):
 
 		data.plot(title = title, ax = ax, x_compat=False,  linewidth=2,
 		 color = [colors[x] for x in data.columns])
-		#ax.xaxis.set_major_locator(mdates.HourLocator(interval=3))
-		#ax.xaxis.set_major_formatter(mdates.DateFormatter('%H:%M'))
 		ax.set_xlabel('')
 		ax.legend(loc='upper left')
 		if (self.ylimit_max > - 1):
@@ -64,9 +63,10 @@ class Plotter(Printer):
 		else:
 			autoscale = ax.get_ylim()
 			ax.set_ylim(ymin = 0, ymax = autoscale[1])
-		fig.autofmt_xdate(rotation=0, ha='center', which=None)
+
 		self.plot_index += 1
+		return ax
 
 	def finish_up(self):
 		self.pass_index += 1
-		plt.show(block = False)
+		plt.show(block = self.block_on_finish)

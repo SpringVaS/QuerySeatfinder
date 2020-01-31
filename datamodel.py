@@ -192,10 +192,10 @@ class Model(Subject):
 		occupancy = self.get_info('seatestimate', timebegin, timeend)
 		pressure = self.data_processor.compute_pressure(occupancy)
 		self.printer.set_ylimits(0,-10)
-		self.printer.export_data(self.__grouped_seat_info(occupancy),
+		self.printer.export_data(self.grouped_seat_info(occupancy),
 			"Bel. Plätze", "Anzahl belegte Sitzplätze")
 		self.printer.set_ylimits(0,1.05)
-		self.printer.export_data(self.__all_main_lib_data(pressure), "Sitzplatzdruck Hauptbib", "Anteil belegter Sitzplätze")
+		self.printer.export_data(self.all_mainlib_data(pressure), "Sitzplatzdruck Hauptbib", "Anteil belegter Sitzplätze")
 		self.printer.export_data(pressure[self.slibs].sort_index(axis=1), "Sitzplatzdruck Fachbibs",  "Anteil belegter Sitzplätze")
 		self.printer.finish_up()
 		self.__update_progress(100)
@@ -207,7 +207,8 @@ class Model(Subject):
 		speclib_pressure = self.data_processor.compute_speclibs_pressure(occupancy)
 		mainlib_pressure_vs_speclib_pressure  = pd.merge(mainlib_pressure, speclib_pressure, on='timestamp')
 
-		grouped_occupancy = self.__grouped_seat_info(occupancy)
+
+		grouped_occupancy = self.grouped_seat_info(occupancy)
 
 	
 		#mask = grouped_occupancy.transform(lambda x: x==x.max()).astype('bool')
@@ -228,20 +229,25 @@ class Model(Subject):
 		self.printer.export_data(grouped_occupancy,
 			"Absolute Anzahl belegter Sitzplätze in den Bibliotheken auf dem Campus",
 			"Absolute Anzahl belegter Sitzplätze")
+		self.printer.export_data(self.all_mainlib_data(occupancy), 
+			"Absolute Anzahl belegter Sitzplätze in Hauptbin und ihren Lesesälen",
+			"Absolute Anzahl belegter Sitzplätze")
 		#self.printer.export_data(mainlib_pressure_vs_speclib_pressure, "Pressure in campus libraries")
 
 		self.printer.finish_up()
 		self.__update_progress(100)
 
-	def __all_main_lib_data(self, data):
+	def all_mainlib_data(self, data):
 		ret = data[self.mainlib].sort_index(axis=1)
 		if ('KIT-BIB' in data.keys()):
 			ret = pd.merge(data[['KIT-BIB']], ret, on='timestamp')
+		else:
+			ms = self.data_processor.sum_mainlib(data)
+			ret = pd.merge(ms, ret, on= 'timestamp')
 
 		return ret
 
-
-	def __grouped_seat_info(self, data):
+	def grouped_seat_info(self, data):
 		mainlib = data[self.mainlib].sum(axis=1)
 		mainlib.name = "KIT-BIB"
 		merged = pd.merge(mainlib, data[self.slibs].sort_index(axis=1), on='timestamp')

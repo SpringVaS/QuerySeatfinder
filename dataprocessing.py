@@ -107,6 +107,11 @@ class DataProcessor(object):
 		return location_data
 
 
+	def sum_mainlib(self, data):
+		mainlib = data[self.mainlib].sum(axis = 1)
+
+		return mainlib.reset_index(name = "KIT-BIB").set_index(['timestamp'])
+
 	def compute_mainlib_pressure(self, occupancy_data):
 		mainlib_capacity = self.lib_metadata[self.mainlib].loc['available_seats'].sum()
 		mainlib_pressure = occupancy_data[self.mainlib].sum(axis = 1) / mainlib_capacity
