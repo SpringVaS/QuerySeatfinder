@@ -131,6 +131,13 @@ class DataProcessor(object):
 		return speclib_pressure.sort_index(axis=1)
 
 
+	def compute_grouped_pressure(self, occupancy_data):
+		mainlib_pressure = self.compute_mainlib_pressure(occupancy_data)
+		speclib_pressure = self.compute_speclibs_pressure(occupancy_data)
+		pressure = pd.merge(mainlib_pressure, speclib_pressure.sort_index(axis=1), on='timestamp')
+
+		return pressure
+
 	def compute_pressure(self, occupancy_data):
 		mainlib_pressure = self.compute_mainlib_pressure(occupancy_data)
 		halls_pressure = self.compute_reading_halls_pressure(occupancy_data)
