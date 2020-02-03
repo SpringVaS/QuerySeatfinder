@@ -7,6 +7,11 @@ import matplotlib.dates as mdates
 import matplotlib.ticker as ticker
 import matplotlib.pyplot as plt
 
+import seaborn as sns
+
+from openpyxl import Workbook, load_workbook
+
+
 
 import datetime as dt
 import pandas as pd
@@ -29,8 +34,8 @@ class CommandLineController(dm.Observer):
 
 	def mean_much_data(self, filename):
 		occupancy = pd.read_pickle(filename);
-
 		occupancy = occupancy[occupancy.index < pd.Timestamp(year=2020, month=1, day=1)]
+		occupancy = occupancy[occupancy.index >= pd.Timestamp(year=2015, month=1, day=1)]
 
 		pressure = self.model.data_processor.compute_pressure(occupancy)
 		pressure = pressure[self.model.all_libs]
@@ -43,62 +48,85 @@ class CommandLineController(dm.Observer):
 		sum_occupancy = occupancy.sum(axis=1)
 		sum_occupancy = sum_occupancy.reset_index(name = "All").set_index(['timestamp'])
 
-		print(pd.to_timedelta(pd.Timestamp(year=2015, month=1, day=1) - pd.Timestamp(year=1970, month=1, day=1)))
+		grouped = sum_occupancy.groupby([sum_occupancy.index.month, sum_occupancy.index.day])
 
+		avg_data = grouped.mean()
 
-		whole = pd.DataFrame()
-		
-		for i in range(2015, 2020):
-			tdoffset =pd.to_timedelta(pd.Timestamp(year=i, month=1, day=1) - pd.Timestamp(year=1970, month=1, day=1))
-			mean_mod_year = sum_occupancy[sum_occupancy.index.year == i].shift(freq=-tdoffset)
-			whole = whole.append(mean_mod_year)
+		datetimeindex = [pd.Timestamp(year = 1972, month=m, day=d) for (m, d) in avg_data.index]
 
+		idx = pd.DatetimeIndex(datetimeindex)
 
-		whole = whole.groupby(whole.index).mean()
+		avg_data = pd.DataFrame(data = avg_data.values, index=idx, columns=['All'])
 
-		plotdata = whole.resample('1D', label='left').mean()
-		#plotdata = whole.resample('7D', label='left').mean()
+		avg_data = avg_data.resample('7D').mean()
 
-		#plotdata = plotdata.resample('1D').interpolate()
+		print(avg_data)
 
-		print(plotdata)
-	
+		max_points = avg_data.nlargest(2, ['All'])
 
-		#plotdata = plotdata.resample('1D').interpolate()
+		print(max_points)
 
-		self.model.printer.clean_plot(self.model.printer.export_data(plotdata,
+		ax = (self.model.printer.export_data(avg_data,
 			"Mittelwert belegter Sitzplätze aller Bibliotheken auf dem Campus: 2015-2019", "Anzahl belegter Sitzplätze"))
+
+		max_points.plot(ax=ax, marker='o', markersize=8, linestyle = 'None', color = [colors.get(x, 'Red') for x in max_points.columns], legend=False)
+
+		self.model.printer.clean_plot(ax)
+
+		ax.legend(['All'],loc='upper right')
 
 		self.model.printer.finish_up()
 
 
 	def week_overview(self, filename):
 		occupancy = pd.read_pickle(filename);
-
 		occupancy = occupancy[occupancy.index < pd.Timestamp(year=2020, month=1, day=1)]
+		occupancy = occupancy[occupancy.index >= pd.Timestamp(year=2015, month=1, day=1)]
 
 		pressure = self.model.data_processor.compute_grouped_pressure(occupancy)
-		#pressure = pressure[self.model.all_libs]
-		#pressure = pressure.mean(axis=1)
-		#pressure = pressure.reset_index(name = "All").set_index(['timestamp'])
 
-		#pressure = pd.merge(pressure[(self.model.slibs)].sort_index(axis=1)
+		sum_occupancy = occupancy.sum(axis=1)
+		sum_occupancy = sum_occupancy.reset_index(name = "All").set_index(['timestamp'])
 
-		whole = pd.DataFrame()
+		grouped = pressure.groupby([pressure.index.week, pressure.index.weekday, 
+									pressure.index.hour, pressure.index.minute])
 
-		for i in range(2015, 2020):
-			tdoffset =pd.to_timedelta(pd.Timestamp(year=i, month=1, day=1) - pd.Timestamp(year=1970, month=1, day=1))
-			mean_mod_year = pressure[pressure.index.year == i].shift(freq=-tdoffset)
-			whole = whole.append(mean_mod_year)
-
-		whole = whole.loc['1970-01-15':'1970-03-15']
-		whole = whole.groupby(whole.index).mean()
-
-		print(whole)
-
-		#self.model.printer.finish_up()
+		avg_data = grouped.mean()
 
 
+		for data in avg_data.groupby(level=0):
+			kw = data[0]
+			df = data[1]
+			idx = [pd.Timedelta(days=wd, hours=h, minutes = minute) for (w, wd, h, minute) in df.index]
+			df_reindexed = pd.DataFrame(data = df.values, index=idx, columns = df.columns)
+			if (kw == 13):
+				sns.heatmap(df_reindexed.transpose(), xticklabels=96)
+
+
+		self.model.printer.finish_up()
+
+	def __get_average_by_week(self, data):
+		
+		grouped = data.groupby([data.index.week])
+
+		avg_data = grouped.mean()
+
+		return avg_data
+
+
+	def __get_yearly_average(self, data):
+		
+		grouped = data.groupby([data.index.month, data.index.day, data.index.hour, data.index.minute])
+
+		avg_data = grouped.mean()
+
+		datetimeindex = [pd.Timestamp(year = 1972, month=m, day=d, hour = h, minute = minute) for (m, d, h, minute) in avg_data.index]
+
+		idx = pd.DatetimeIndex(datetimeindex)
+
+		avg_data = pd.DataFrame(data = avg_data.values, index=idx, columns = avg_data.columns)
+
+		return avg_data
 
 	def large(self, filename):
 		occupancy = pd.read_pickle(filename);
@@ -194,3 +222,4 @@ if __name__ == "__main__":
 
 	#c.local_editing('data.pkl')
 	c.week_overview('data.pkl')
+	#c.mean_much_data('data.pkl')
