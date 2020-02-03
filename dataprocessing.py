@@ -10,6 +10,7 @@ def resample_gaussian(resampler, sigma):
 	labels = []
 	reps = []
 	loffset = resampler.loffset
+	values = pd.DataFrame()
 	for group in resampler:
 		label_time = group[0] + loffset
 		labels.append(label_time)
@@ -33,7 +34,12 @@ def resample_gaussian(resampler, sigma):
 	""" location_id is to be found in group like this
 		the first key of the first line of the secend element of the passed touple
 	"""
-	loc_id = (next(iter(values.iloc[0].keys())))
+	if(not values.empty):
+		loc_id = (next(iter(values.iloc[0].keys())))
+	else:
+		ret = pd.DataFrame({'timestamp': [], 'FBI': []})
+		ret.set_index(['timestamp'])
+		return ret
 
 	value_dict = {'timestamp' : labels, loc_id : reps}
 	resampled_dataframe = pd.DataFrame(value_dict)
@@ -107,10 +113,15 @@ class DataProcessor(object):
 		return location_data
 
 
+	def sum_mainlib(self, data):
+		mainlib = data[self.mainlib].sum(axis = 1)
+
+		return mainlib.reset_index(name = "KIT-BIB").set_index(['timestamp'])
+
 	def compute_mainlib_pressure(self, occupancy_data):
 		mainlib_capacity = self.lib_metadata[self.mainlib].loc['available_seats'].sum()
 		mainlib_pressure = occupancy_data[self.mainlib].sum(axis = 1) / mainlib_capacity
-
+		print(mainlib_pressure)
 		return mainlib_pressure.reset_index(name = "KIT-BIB").set_index(['timestamp'])
 
 	def compute_reading_halls_pressure(self, occupancy_data):
@@ -125,6 +136,13 @@ class DataProcessor(object):
 
 		return speclib_pressure.sort_index(axis=1)
 
+
+	def compute_grouped_pressure(self, occupancy_data):
+		mainlib_pressure = self.compute_mainlib_pressure(occupancy_data)
+		speclib_pressure = self.compute_speclibs_pressure(occupancy_data)
+		pressure = pd.merge(mainlib_pressure, speclib_pressure.sort_index(axis=1), on='timestamp')
+
+		return pressure
 
 	def compute_pressure(self, occupancy_data):
 		mainlib_pressure = self.compute_mainlib_pressure(occupancy_data)
