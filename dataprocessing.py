@@ -37,9 +37,8 @@ def resample_gaussian(resampler, sigma):
 	if(not values.empty):
 		loc_id = (next(iter(values.iloc[0].keys())))
 	else:
-		ret = pd.DataFrame({'timestamp': [], 'FBI': []})
-		ret.set_index(['timestamp'])
-		return ret
+		df = resampler.mean()
+		return df
 
 	value_dict = {'timestamp' : labels, loc_id : reps}
 	resampled_dataframe = pd.DataFrame(value_dict)
@@ -121,8 +120,14 @@ class DataProcessor(object):
 	def compute_mainlib_pressure(self, occupancy_data):
 		mainlib_capacity = self.lib_metadata[self.mainlib].loc['available_seats'].sum()
 		mainlib_pressure = occupancy_data[self.mainlib].sum(axis = 1) / mainlib_capacity
+
+		mainlib_pressure = mainlib_pressure.reset_index(name = "KIT-BIB")
+		mainlib_pressure = mainlib_pressure.set_index('timestamp')
+
 		print(mainlib_pressure)
-		return mainlib_pressure.reset_index(name = "KIT-BIB").set_index(['timestamp'])
+
+		return mainlib_pressure
+
 
 	def compute_reading_halls_pressure(self, occupancy_data):
 		capacity = self.lib_metadata[self.mainlib].loc['available_seats']

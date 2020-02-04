@@ -235,6 +235,7 @@ class Model(Subject):
 
 	def __all_main_lib_data(self, data):
 		ret = data[self.mainlib].sort_index(axis=1)
+		#print(ret)
 		if ('KIT-BIB' in data.keys()):
 			ret = pd.merge(data[['KIT-BIB']], ret, on='timestamp')
 
@@ -243,7 +244,8 @@ class Model(Subject):
 
 	def __grouped_seat_info(self, data):
 		mainlib = data[self.mainlib].sum(axis=1)
-		mainlib.name = "KIT-BIB"
+		mainlib = mainlib.reset_index(name = "KIT-BIB")
+		mainlib = mainlib.set_index('timestamp')
 		merged = pd.merge(mainlib, data[self.slibs].sort_index(axis=1), on='timestamp')
 		return merged
 
