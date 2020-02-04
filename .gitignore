@@ -3,5 +3,6 @@
 *.xlsx
 venv/
 __pycache__/
-heatmap/
+heatmaps/
 *.pkl
+test.*
