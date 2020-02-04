@@ -6,6 +6,8 @@ from plotting import Plotter, colors
 import matplotlib.dates as mdates
 import matplotlib.ticker as ticker
 import matplotlib.pyplot as plt
+import matplotlib as mpl
+import numpy as np
 
 import seaborn as sns
 
@@ -69,7 +71,8 @@ class CommandLineController(dm.Observer):
 		ax = (self.model.printer.export_data(avg_data,
 			"Mittelwert belegter Sitzplätze aller Bibliotheken auf dem Campus: 2015-2019", "Anzahl belegter Sitzplätze"))
 
-		max_points.plot(ax=ax, marker='o', markersize=8, linestyle = 'None', color = [colors.get(x, 'Red') for x in max_points.columns], legend=False)
+		#max_points.plot(ax=ax, marker='o', markersize=8, linestyle = 'None', color = [colors.get(x, 'Red') for x in max_points.columns], legend=False)
+
 
 		self.model.printer.clean_plot(ax)
 
@@ -90,27 +93,35 @@ class CommandLineController(dm.Observer):
 
 		grouped = pressure.groupby([pressure.index.week, pressure.index.weekday, 
 									pressure.index.hour, pressure.index.minute])
-
 		avg_data = grouped.mean()
-
-
 		for data in avg_data.groupby(level=0):
 			kw = data[0]
 			df = data[1]
 			idx = [pd.Timedelta(days=wd, hours=h, minutes = minute) for (w, wd, h, minute) in df.index]
 			df_reindexed = pd.DataFrame(data = df.values, index=idx, columns = df.columns)
-			if (kw == 13):
-				sns.heatmap(df_reindexed.transpose(), xticklabels=96)
+			#print(df.max())
+			fig = plt.figure(figsize=(11, 6))
+			ax = sns.heatmap(df_reindexed.transpose(), xticklabels=96, square=False, 
+				cmap='Spectral_r', vmin = 0, vmax = 1, cbar_kws={'label': 'Anteil belegter Sitzplätze'})
+			
+			diff = (ax.get_xticks()[1] - ax.get_xticks()[0]) / 2
+			ax.set_xticks(ax.get_xticks() + diff, minor=True)
+			ax.set_xticks(np.append(ax.get_xticks(), 
+						ax.get_xticks()[len(ax.get_xticks()) - 1] + 2 * diff - (diff / (48))), minor=False)
+			ax.set_xticklabels(['MO', 'DI', 'MI', 'DO', 'FR', 'SA', 'SO'], rotation=0, minor=True)
+			ax.set_xticklabels([], minor=False)
+			for tick in ax.xaxis.get_minor_ticks():
+				tick.tick1line.set_markersize(0)
+				tick.tick2line.set_markersize(0)
+			ax.set_yticklabels(ax.get_yticklabels(), rotation=0, va = 'center')
+			plt.savefig('heatmaps/kw{0:02d}.png'.format(kw), dpi=300)
+			plt.close()
 
-
-		self.model.printer.finish_up()
+		#self.model.printer.finish_up()
 
 	def __get_average_by_week(self, data):
-		
 		grouped = data.groupby([data.index.week])
-
 		avg_data = grouped.mean()
-
 		return avg_data
 
 
@@ -160,55 +171,21 @@ class CommandLineController(dm.Observer):
 
 
 	def local_editing(self, filename):
-		#occupancy = pd.read_pickle(filename);
+		occupancy = pd.read_pickle(filename);
+		occupancy = occupancy[occupancy.index < pd.Timestamp(year=2020, month=1, day=1)]
+		occupancy = occupancy[occupancy.index >= pd.Timestamp(year=2015, month=1, day=1)]
 
-		self.model.set_resampling_interval('1D')
+		sum_occupancy = occupancy.sum(axis=1)
+		sum_occupancy = sum_occupancy.reset_index(name = "All").set_index(['timestamp'])
 
-		occupancy = self.model.get_info('seatestimate', pd.Timestamp("2020-01-01 00:00:00"), pd.Timestamp("2020-01-31 00:00:00"))
-		
-		mainlib_pressure = self.model.data_processor.compute_mainlib_pressure(occupancy)
-		speclib_pressure = self.model.data_processor.compute_speclibs_pressure(occupancy)
-		mainlib_pressure_vs_speclib_pressure  = pd.merge(mainlib_pressure, speclib_pressure, on='timestamp')
+		avg_data = self.__get_average_by_week(sum_occupancy)
 
-		grouped_occupancy = self.model.grouped_seat_info(occupancy)
+		print(avg_data.nlargest(5, ['All']))
 
-		sum_occupancy = grouped_occupancy.sum(axis = 1)
-		max_value = sum_occupancy.max()
-
-		print(sum_occupancy)
-		print(max_value)
-
-		maxpoints = grouped_occupancy[sum_occupancy.values == max_value]
-
-		maxrel = mainlib_pressure_vs_speclib_pressure[sum_occupancy.values == max_value]
-
-		print(maxpoints)
-
-	
-		#mask = grouped_occupancy.transform(lambda x: x==x.max()).astype('bool')
-		#grouped_occupancy.loc[mask]
-
-		pressure_ratio_description = "Anteil belegter Sitzplätze"
-		"""
-		self.printer.export_data(self.__grouped_seat_info(occupancy),
-			"Absolute Anzahl belegter Sitzplätze in den Bibliotheken auf dem Campus",
-			"Absolute Anzahl belegter Sitzplätze")
-		"""
-		self.model.printer.set_ylimits(0,-10)
-		self.model.printer.export_data(mainlib_pressure, "Sitzplatzdruck in der Hauptbibliothek",
-			pressure_ratio_description)
-		self.model.printer.export_data(mainlib_pressure_vs_speclib_pressure,
-			"Sitzplatzdruck in den Bibliotheken auf dem Campus", pressure_ratio_description)
-		ax = self.model.printer.export_data(grouped_occupancy,
-			"Absolute Anzahl belegter Sitzplätze in den Bibliotheken auf dem Campus",
-			"Absolute Anzahl belegter Sitzplätze")
-		#self.printer.export_data(mainlib_pressure_vs_speclib_pressure, "Pressure in campus libraries")
-
-		maxpoints.plot(ax=ax, marker='o', markersize=8, linestyle = 'None', color = [colors.get(x, 'Red') for x in maxpoints.columns], legend=False)
+		ax = (self.model.printer.export_data(avg_data,
+			"Mittelwert belegter Sitzplätze aller Bibliotheken auf dem Campus: 2015-2019", "Anzahl belegter Sitzplätze"))
 
 
-		for tick in ax.xaxis.get_minor_ticks():
-			tick.label1.set_horizontalalignment('left')
 		
 		self.model.printer.finish_up()
 
@@ -218,8 +195,9 @@ if __name__ == "__main__":
 	m = dm.Model(URL, printer)
 	c = CommandLineController(m)
 
-	#c.save_data_to_disc(pd.Timestamp("2014-01-01 00:00:00"), pd.		Timestamp("2020-01-31 00:00:00"), 'data.pkl')
+	#c.save_data_to_disc(pd.Timestamp("2014-01-01 00:00:00"), pd.       Timestamp("2020-01-31 00:00:00"), 'data.pkl')
 
 	#c.local_editing('data.pkl')
-	c.week_overview('data.pkl')
+	#c.week_overview('data.pkl')
 	#c.mean_much_data('data.pkl')
+	c.local_editing('data.pkl')

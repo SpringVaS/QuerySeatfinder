@@ -3,3 +3,4 @@
 *.xlsx
 venv/
 __pycache__/
+heatmap/
