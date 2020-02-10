@@ -142,30 +142,12 @@ class CommandLineController(dm.Observer):
 	def large(self, filename):
 		occupancy = pd.read_pickle(filename);
 
-		sum_occupancy = occupancy.sum(axis=1)
+		grouped = self.model.grouped_seat_info(occupancy)
 
-		sum_occupancy = sum_occupancy.resample('1W').mean()
+		plotdata = grouped.resample('1W').mean()
 
-		max_value = sum_occupancy.max()
-		sum_occupancy = sum_occupancy.reset_index(name = "All").set_index(['timestamp'])
-		maxpoints = sum_occupancy[sum_occupancy.values == max_value]
-
-		max_values = sum_occupancy.nlargest(5, ['All'])
-
-		print(max_values)
-
-
-		ax=self.model.printer.export_data(sum_occupancy, "Wochenmittel alle Bibs" , 
-			"Anzahl belegter Sitzplätze")
-
-		#plt.scatter(x = max_values.index, y = max_values.values, color = "Red", s= 150, label = 'jaa')
-
-		maxpoints.plot(ax=ax, marker='o', markersize=8, linestyle = 'None', color = [colors.get(x, 'Red') for x in maxpoints.columns], legend=False)
-
-
+		ax = plotdata.plot.area(color = [colors.get(x, 'Purple') for x in plotdata.columns])
 		self.model.printer.clean_plot(ax)
-
-		ax.legend(['All'],loc='upper left')
 
 		self.model.printer.finish_up()
 
@@ -200,4 +182,4 @@ if __name__ == "__main__":
 	#c.local_editing('data.pkl')
 	#c.week_overview('data.pkl')
 	#c.mean_much_data('data.pkl')
-	c.local_editing('data.pkl')
+	c.large('data.pkl')
