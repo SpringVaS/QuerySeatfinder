@@ -44,7 +44,7 @@ class ExcelPrinter(Printer):
 
 		displayable_metadata = pd.merge(displayable_metadata[self.mainlib].sort_index(axis=1),
 										displayable_metadata[self.slibs].sort_index(axis=1),
-										on=displayable_metadata.index)
+										on=displayable_metadata.index, how = 'inner', left_index=True, right_index=True)
 
 		return displayable_metadata
 
